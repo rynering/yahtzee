@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {freshGame,scoreFor,available,commit,totals,categories} from '../dist/engine.mjs';
+const withDice=dice=>({...freshGame(),dice,rolls:1});
+test('upper section and matching kinds add the correct dice',()=>{const g=withDice([4,4,4,4,2]);assert.equal(scoreFor('fours',g),16);assert.equal(scoreFor('three',g),18);assert.equal(scoreFor('four',g),18);assert.equal(scoreFor('chance',g),18);assert.equal(scoreFor('full',g),0);});
+test('full house requires three plus two before Joker applies',()=>{assert.equal(scoreFor('full',withDice([2,2,3,3,3])),25);assert.equal(scoreFor('full',withDice([2,2,2,2,2])),0);});
+test('straights accept duplicates only when four consecutive values remain',()=>{assert.equal(scoreFor('small',withDice([2,3,3,4,5])),30);assert.equal(scoreFor('large',withDice([2,3,3,4,5])),0);assert.equal(scoreFor('small',withDice([1,2,3,5,6])),0);assert.equal(scoreFor('large',withDice([6,3,2,5,4])),40);});
+test('extra Yahtzee forces matching upper slot and awards 100 on commit',()=>{const g=withDice([5,5,5,5,5]);g.scores.yahtzee=50;assert.deepEqual(available(g),['fives']);const r=commit(g,'fives');assert.equal(r.extra,100);assert.equal(r.game.scores.fives,25);assert.equal(r.game.extra,100);assert.equal(r.game.rolls,0);assert.ok(r.game.held.every(h=>h===false));});
+test('Joker gives fixed lower scores; scratched Yahtzee never gets bonus',()=>{const g=withDice([4,4,4,4,4]);g.scores.yahtzee=0;g.scores.fours=8;assert.equal(scoreFor('full',g),25);assert.equal(scoreFor('small',g),30);assert.equal(scoreFor('large',g),40);assert.ok(!available(g).includes('ones'));assert.equal(commit(g,'large').extra,0);});
+test('Joker falls back to zero in upper slots if lower section is full',()=>{const g=withDice([3,3,3,3,3]);categories.slice(6).forEach(c=>g.scores[c.id]=0);g.scores.threes=9;assert.ok(available(g).includes('sixes'));assert.equal(commit(g,'sixes').points,0);});
+test('upper bonus begins at exactly 63',()=>{const g=freshGame();g.scores={...g.scores,ones:3,twos:6,threes:9,fours:12,fives:15,sixes:18};assert.equal(totals(g).total,98);g.scores.ones=2;assert.equal(totals(g).bonus,0);});
+test('all thirteen rounds complete and used categories cannot be reused',()=>{let g=freshGame();assert.throws(()=>commit(g,'ones'));for(let i=0;i<13;i++){g={...g,dice:[1,2,3,4,5],rolls:3};const id=available(g)[0];const r=commit(g,id);g=r.game;assert.equal(r.finished,i===12);assert.ok(!available(g).includes(id));}assert.equal(Object.values(g.scores).filter(s=>s!==null).length,13);});

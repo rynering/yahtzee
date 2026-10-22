@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Lucky Roll — Classic Yahtzee",
+  "short_name": "Lucky Roll",
+  "description": "A classic, always at hand. Play Yahtzee at your own pace, online or offline.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f5ef",
+  "theme_color": "#214d3e",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

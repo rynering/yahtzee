@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#214d3e"><meta name="description" content="Your favorite dice game, always at hand. Play classic Yahtzee with animated dice, optional sound, and personal high scores.">
+  <title>Lucky Roll — A classic, always at hand.</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Lucky Roll home"><span class="brand-icon" aria-hidden="true">⚄</span><span>lucky roll<span class="brand-period">.</span></span></a>
+    <nav aria-label="Game tools"><button id="sound" class="nav-button" aria-pressed="true"></button><span class="nav-divider"></span><button id="rules" class="nav-button"><span aria-hidden="true">ⓘ</span> How to play</button><button id="history" class="nav-button"><span aria-hidden="true">♜</span> High scores</button></nav>
+  </header>
+  <main>
+    <div class="intro"><div><div class="eyebrow">A LITTLE LUCK. A LOT OF POSSIBILITIES.</div><h1>A classic, always at hand.</h1><p>Five dice. Three rolls. Your next personal best.</p></div><button id="new-game" class="outline-button"><span aria-hidden="true">↻</span> New game</button></div>
+    <div class="game-layout">
+      <section class="play-column" aria-label="Dice and game progress">
+        <div class="stats"><div><span class="stat-label">YOUR SCORE</span><strong id="current-score">0</strong></div><div><span class="stat-label"><span class="gold">♜</span> PERSONAL BEST</span><strong id="best-score">—</strong></div><div><span class="stat-label">ROUND</span><strong><span id="round">1</span><small> / 13</small></strong></div></div>
+        <section class="tray" aria-label="Dice tray">
+          <div class="tray-top"><span><i></i> CLASSIC YAHTZEE</span><span id="roll-counter">YOUR FIRST ROLL AWAITS</span></div>
+          <div class="tray-content"><div class="tray-copy"><h2 id="tray-title">Good things are on a roll.</h2><p id="tray-hint">Take a breath. Try your luck.</p></div><div class="dice" id="dice"></div><p class="hold-hint" id="hold-hint">Roll the dice to get started</p><button id="roll" class="roll-button"><span aria-hidden="true">⚄</span><span id="roll-label">Roll the dice</span><span aria-hidden="true">↗</span></button><div class="roll-progress" id="roll-progress" aria-hidden="true"><i></i><i></i><i></i></div></div>
+          <div class="tray-bottom"><span>YOUR LUCK. YOUR PACE.</span><span aria-hidden="true">✦</span><span>NO TIMER. JUST PLAY.</span></div>
+        </section>
+        <div class="tip"><span class="tip-icon" aria-hidden="true">✧</span><div><strong id="tip-title">Make every roll count.</strong><p id="tip-text">After rolling, tap the dice you want to keep. Roll the rest, then choose a category on your scorecard.</p></div></div>
+        <div id="announcement" class="announcement" role="status" aria-live="polite"></div>
+        <p class="save-note" id="save-note"><span aria-hidden="true">✓</span> Your game and personal best are saved on this device.</p>
+      </section>
+      <section class="scorecard" aria-label="Scorecard"><div class="scorecard-heading"><h2>Your scorecard</h2><span id="filled-count">0 of 13 filled</span></div><div class="section-heading"><span>UPPER SECTION</span><span>POINTS</span></div><div id="upper-rows"></div><div class="bonus-box"><div><strong>Upper bonus <span>+35</span></strong><p id="bonus-text">Score 63 up top to earn 35 extra points</p></div><span id="bonus-count">0 / 63</span><div class="bonus-track"><div id="bonus-fill"></div></div></div><div class="section-heading lower-heading"><span>LOWER SECTION</span><span>POINTS</span></div><div id="lower-rows"></div><div id="extra-bonus" hidden></div><div class="scorecard-total"><span>Total score</span><strong id="total-score">0</strong></div><div id="score-action" class="score-action"><p>Roll the dice. Find your winning combination.</p></div></section>
+    </div>
+    <footer><span class="footer-brand">A familiar favorite. A fresh roll.</span><span>Made for the love of the game. <span class="footer-die" aria-hidden="true">⚄</span></span></footer>
+  </main>
+  <dialog id="modal"><button class="close-modal" aria-label="Close dialog">✕</button><div id="modal-content"></div></dialog>
+  <script type="module" src="app.mjs"></script>
+</body></html>
