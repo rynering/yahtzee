@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#214d3e"><meta name="description" content="Your favorite dice game, always at hand. Play classic Yahtzee with animated dice, optional sound, and personal high scores.">
   <title>Lucky Roll — A classic, always at hand.</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="stylesheet" href="style.css?v=5">
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <header class="site-header">
@@ -16,20 +16,32 @@
     <div class="game-layout">
       <section class="play-column" aria-label="Dice and game progress">
         <div class="resume-banner" id="resume-banner" hidden><div><strong>You have a saved game.</strong><p>Resume it, or roll below to start a fresh game.</p></div><button id="resume-game" class="secondary-button">Resume game</button></div>
-        <div class="stats"><div><span class="stat-label">YOUR SCORE</span><strong id="current-score">0</strong></div><div><span class="stat-label"><span class="gold">♜</span> PERSONAL BEST</span><strong id="best-score">—</strong></div><div><span class="stat-label">ROUND</span><strong><span id="round">1</span><small> / 13</small></strong></div></div>
+        <div class="stats"><div><span class="stat-label">YOUR SCORE</span><strong id="current-score">0</strong><button id="view-scorecard" class="scorecard-link">View scorecard</button></div><div><span class="stat-label"><span class="gold">♜</span> PERSONAL BEST</span><strong id="best-score">—</strong></div><div><span class="stat-label">ROUND</span><strong><span id="round">1</span><small> / 13</small></strong></div></div>
         <section class="tray" aria-label="Dice tray">
           <div class="tray-top"><span><i></i> CLASSIC YAHTZEE</span><span id="roll-counter">YOUR FIRST ROLL AWAITS</span></div>
-          <div class="tray-content"><div class="tray-copy"><h2 id="tray-title">Good things are on a roll.</h2><p id="tray-hint">Take a breath. Try your luck.</p></div><div class="dice" id="dice"></div><p class="hold-hint" id="hold-hint">Roll the dice to get started</p><div class="roll-status" role="status" aria-live="polite" aria-atomic="true"><div class="roll-status-heading"><strong id="roll-status-label">Ready to roll</strong><div class="roll-progress" id="roll-progress" aria-hidden="true"><i>1</i><i>2</i><i>3</i></div></div><p id="roll-status-detail">3 rolls available this turn</p></div><button id="roll" class="roll-button"><span aria-hidden="true">⚄</span><span id="roll-label">Roll for the first time</span><span aria-hidden="true">↗</span></button></div>
+          <div class="tray-content"><div class="tray-copy"><h2 id="tray-title">Good things are on a roll.</h2><p id="tray-hint">Take a breath. Try your luck.</p></div><div class="dice" id="dice"></div><p class="hold-hint" id="hold-hint">Roll the dice to get started</p><div class="roll-status" role="status" aria-live="polite" aria-atomic="true"><div class="roll-status-heading"><strong id="roll-status-label">Ready to roll</strong><div class="roll-progress" id="roll-progress" aria-hidden="true"><i>1</i><i>2</i><i>3</i></div></div><p id="roll-status-detail">3 rolls available this turn</p></div><div class="turn-actions"><button id="roll" class="roll-button"><span aria-hidden="true">⚄</span><span id="roll-label">Roll dice</span><span aria-hidden="true">↗</span></button><button id="choose-score" class="choose-score-button" disabled>Choose score</button></div></div>
           <div class="tray-bottom"><span>YOUR LUCK. YOUR PACE.</span><span aria-hidden="true">✦</span><span>NO TIMER. JUST PLAY.</span></div>
         </section>
-        <div class="tip"><span class="tip-icon" aria-hidden="true">✧</span><div><strong id="tip-title">Make every roll count.</strong><p id="tip-text">After rolling, tap the dice you want to keep. Roll the rest, then choose a category on your scorecard.</p></div></div>
+        <div class="tip"><span class="tip-icon" aria-hidden="true">✧</span><div><strong id="tip-title">Make every roll count.</strong><p id="tip-text">After rolling, tap the dice you want to keep. Roll the rest, then tap Choose score to pick a category.</p></div></div>
         <div id="announcement" class="announcement" role="status" aria-live="polite"></div>
         <p class="save-note" id="save-note"><span aria-hidden="true">✓</span> Your game and personal best are saved on this device.</p>
       </section>
-      <section class="scorecard" aria-label="Scorecard"><div class="scorecard-heading"><h2>Your scorecard</h2><span id="filled-count">0 of 13 filled</span></div><div class="section-heading"><span>UPPER SECTION</span><span>POINTS</span></div><div id="upper-rows"></div><div class="bonus-box"><div><strong>Upper bonus <span>+35</span></strong><p id="bonus-text">Score 63 up top to earn 35 extra points</p></div><span id="bonus-count">0 / 63</span><div class="bonus-track"><div id="bonus-fill"></div></div></div><div class="section-heading lower-heading"><span>LOWER SECTION</span><span>POINTS</span></div><div id="lower-rows"></div><div id="extra-bonus" hidden></div><div class="scorecard-total"><span>Total score</span><strong id="total-score">0</strong></div><div id="score-action" class="score-action"><p>Roll the dice. Find your winning combination.</p></div></section>
+
     </div>
     <footer><span class="footer-brand">A familiar favorite. A fresh roll.</span><span>Made for the love of the game. <span class="footer-die" aria-hidden="true">⚄</span></span></footer>
   </main>
+  <dialog id="score-dialog" class="score-dialog" aria-labelledby="score-dialog-title" aria-describedby="score-dialog-hint">
+    <section class="scorecard" aria-label="Scorecard">
+      <div class="scorecard-heading"><div><h2 id="score-dialog-title">Choose your score</h2><p id="score-dialog-hint">Tap a category, then confirm below.</p></div><button id="close-score" class="score-close" aria-label="Back to dice">✕</button></div>
+      <div class="score-roll-summary"><div id="score-dice" class="score-dice" role="img" aria-label="Dice not rolled yet"></div><span id="score-roll-number">Ready to roll</span></div>
+      <div class="score-grid">
+        <div class="score-section"><div class="section-heading"><span>UPPER SECTION</span><span>PTS</span></div><div id="upper-rows"></div><div class="bonus-box"><div><strong>Upper bonus <span>+35</span></strong><p id="bonus-text">Reach 63 to earn 35 extra points</p></div><span id="bonus-count">0 / 63</span><div class="bonus-track"><div id="bonus-fill"></div></div></div></div>
+        <div class="score-section"><div class="section-heading"><span>LOWER SECTION</span><span>PTS</span></div><div id="lower-rows"></div></div>
+      </div>
+      <div id="extra-bonus" hidden></div>
+      <div class="score-footer"><div class="scorecard-total"><span>Total <strong id="total-score">0</strong></span><span id="filled-count">0 of 13 filled</span></div><div id="score-action" class="score-action"><p>Roll the dice to begin.</p></div></div>
+    </section>
+  </dialog>
   <dialog id="modal"><button class="close-modal" aria-label="Close dialog">✕</button><div id="modal-content"></div></dialog>
-  <script type="module" src="app.mjs?v=5"></script>
+  <script type="module" src="app.mjs?v=6"></script>
 </body></html>

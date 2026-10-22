@@ -27,7 +27,7 @@ Run rule tests: `node --test tests/engine.test.mjs`.
 
 ## Updating
 
-Edit files in `dist`, bump the cache version in `dist/sw.js`, test, then push to `main`. Close all app windows and reopen to activate an installed update. The current game is stored under the stable `lucky-roll-v1` local-storage key.
+Edit files in `dist`, bump the cache version in `dist/sw.js`, and update the matching CSS/JavaScript `?v=` values in both `dist/index.html` and the service-worker asset list. Test, then push to `main`. Versioned asset URLs let existing installations load the matching UI and code together. Close all app windows and reopen to activate an installed update. The current game is stored under the stable `lucky-roll-v1` local-storage key.
 
 ## Rules
 
