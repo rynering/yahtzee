@@ -30,6 +30,15 @@ try{
     try{
       await page.goto(origin,{waitUntil:'networkidle'});
       await page.getByRole('button',{name:'Resume game',exact:true}).click();
+      assert.equal(await page.locator('#needed-count').innerText(),'10 left');
+      assert.equal(await page.locator('[data-needed]').count(),10);
+      assert.equal(await page.locator('[data-needed="ones"], [data-needed="twos"], [data-needed="yahtzee"]').count(),0,'used categories, including zeroes, must not appear in the roll reminder');
+      assert.equal(await page.locator('[data-needed="threes"], [data-needed="fours"], [data-needed="four"]').count(),3);
+      const reminder=await page.locator('#needed-list').boundingBox(),dice=await page.locator('#dice').boundingBox();
+      assert.ok(reminder.y+reminder.height<=dice.y,'remaining categories must sit above the dice');
+      assert.ok(await page.locator('#needed-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'reminder must wrap without horizontal overflow');
+      assert.ok(await page.locator('#needed-list').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=14),'reminder text must remain readable');
+      await page.screenshot({path:`artifacts/screenshots/roll-reminder-${viewport.width}.png`});
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.waitForSelector('#score-dialog[open]');
       assert.deepEqual(await page.locator('.score-die-number').allTextContents(),['2','3','4','5','6']);
@@ -72,10 +81,13 @@ try{
       await page.locator('#close-score').click();
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.locator('[data-category="chance"]').click();
+      assert.equal(await page.locator('[data-needed="chance"]').count(),1,'previewing a score must not remove the reminder');
       await page.getByRole('button',{name:'Score 20 points in Chance',exact:true}).click();
       await page.waitForSelector('#score-dialog',{state:'hidden'});
       assert.equal(await page.locator('#roll-status-label').innerText(),'Ready to roll');
       assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('lucky-roll-v1')).game.scores.chance),20);
+      assert.equal(await page.locator('#needed-count').innerText(),'9 left');
+      assert.equal(await page.locator('[data-needed="chance"]').count(),0,'confirmed categories must leave the reminder');
       await page.getByRole('button',{name:'Roll dice',exact:true}).click();
       await page.waitForFunction(()=>document.querySelector('#roll-status-label').textContent==='Roll 1 of 3'&&!document.querySelector('#roll').disabled);
       await page.getByRole('button',{name:'Roll again',exact:true}).click();
@@ -146,6 +158,8 @@ try{
       if(spec.finished){
         await page.waitForSelector('#modal[open]');
         assert.equal(stored.records[0].score,spec.total,'final-round high score must be saved before animation');
+        assert.equal(await page.locator('#needed-count').innerText(),'0 left');
+        assert.match(await page.locator('#needed-list').innerText(),/All categories filled/);
       }else{
         assert.ok(await page.locator('#roll').isEnabled());
         await page.locator('#view-scorecard').click();
@@ -157,6 +171,8 @@ try{
         await page.getByRole('button',{name:'Start new game',exact:true}).click();
         await page.waitForTimeout(1500);
         assert.equal(await page.locator('#current-score').innerText(),'0','cancelled animation must not change a later game');
+        assert.equal(await page.locator('#needed-count').innerText(),'13 left');
+        assert.match(await page.locator('#needed-list').innerText(),/All 13 categories/);
       }
       assert.deepEqual(errors,[]);
       console.log(`PASS celebration ${spec.name}: correct saved score, count-up, sound preference, skip, and next-step behavior.`);

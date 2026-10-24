@@ -45,8 +45,9 @@ function render(){
   $('roll-counter').textContent=done?'ALL 13 ROUNDS COMPLETE':displayedRoll?`ROLL ${displayedRoll} OF 3`:'YOUR FIRST ROLL AWAITS';
   $('roll-status-label').textContent=done?'Game complete':displayedRoll?`Roll ${displayedRoll} of 3`:'Ready to roll';
   $('roll-status-detail').textContent=done?'All 13 rounds scored':rolling?'Dice in motion…':!game.rolls?'3 rolls available this turn':game.rolls===3?'No rolls left — choose your score':`${3-game.rolls} roll${game.rolls===1?'s':''} left — hold dice or score now`;
-  $('tray-title').textContent=done?'That’s a wrap. Well played.':rolling?'A little luck in motion…':!game.rolls?(filled?'A fresh roll. A fresh chance.':'Good things are on a roll.'):isYahtzee(game.dice)?'Yahtzee! Five of a kind.':game.rolls===3?'Time to make it count.':'Keep the good ones.';
-  $('tray-hint').textContent=done?'There’s always another personal best.':!game.rolls?'Take a breath. Try your luck.':available(game).length===1&&game.scores.yahtzee!==null&&isYahtzee(game.dice)?'Joker rule: score the matching upper category.':game.rolls===3?'Choose a category on your scorecard.':'Hold your favorites, then roll again.';
+  const needed=categories.filter(c=>game.scores[c.id]===null);
+  $('needed-count').textContent=`${needed.length} left`;
+  $('needed-list').innerHTML=needed.length===13?'<li>All 13 categories are open.</li>':needed.length?needed.map(c=>`<li data-needed="${c.id}">${c.name}</li>`).join(''):'<li>All categories filled. Nicely played!</li>';
   $('hold-hint').textContent=done?`Final score: ${t.total} points`:rolling?'Let the dice decide…':!game.rolls?'Roll the dice to get started':game.rolls===3?'Out of rolls? You’re right on time. Choose your score.':`${game.held.filter(Boolean).length} held · Tap any die to keep or release it`;
   $('roll-label').textContent=done?'Play again':rolling?'Rolling…':game.rolls===3?'Rolls used':game.rolls?'Roll again':'Roll dice';$('roll').disabled=rolling||scoring||(!done&&(game.rolls>=3||(game.rolls>0&&game.held.every(Boolean))));
   $('choose-score').disabled=rolling||scoring||(!game.rolls&&!done);
