@@ -162,8 +162,9 @@ function playBonusCelebration(plan){
     const complete=()=>{
       total(plan.to);$('bonus-tally').classList.remove('counting');
       $('bonus-result').textContent=`${plan.award} points earned. Your total is ${plan.to}.`;
-      $('bonus-summary').textContent=`+${plan.award} points. Now that’s a good roll.`;
-      chime();later(finish,reduced?1200:750);
+      $('bonus-summary').textContent=`+${plan.award} points added. Tap Continue when you’re ready.`;
+      $('bonus-pop').textContent=`+${plan.award}`;
+      chime();
     };
     if(reduced){
       plan.steps.forEach((_,i)=>$('bonus-step-'+i).classList.add('added'));
@@ -176,22 +177,22 @@ function playBonusCelebration(plan){
       row.classList.add('adding');$('bonus-tally').classList.add('counting');
       pop.textContent=`+${step.points}`;
       pop.getAnimations().forEach(a=>a.cancel());
-      pop.animate([{opacity:0,transform:'translateY(20px) scale(.7)'},{offset:.2,opacity:1,transform:'translateY(0) scale(1.12)'},{opacity:0,transform:'translateY(-38px) scale(1)'}],{duration:1000,easing:'ease-out',fill:'forwards'});
+      pop.animate([{opacity:0,transform:'translateY(12px) scale(.8)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:450,easing:'ease-out',fill:'forwards'});
       tone(step.kind==='score'?440:660,.12,0,'triangle',.035);
-      const start=performance.now(),duration=step.kind==='score'?380:1050;
+      const start=performance.now(),duration=step.kind==='score'?700:2800;
       let lastTone=start;
       const tick=now=>{
         if(finished)return;
-        const progress=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-progress,3);
+        const progress=Math.min(1,(now-start)/duration),eased=progress<.5?2*progress*progress:1-Math.pow(-2*progress+2,2)/2;
         total(step.from+Math.floor(step.points*eased));
-        if(now-lastTone>180&&progress<.95){tone(460+progress*360,.045,0,'sine',.025);lastTone=now;}
+        if(now-lastTone>260&&progress<.95){tone(460+progress*360,.045,0,'sine',.025);lastTone=now;}
         if(progress<1){frame=requestAnimationFrame(tick);return;}
         total(step.to);row.classList.remove('adding');row.classList.add('added');
-        $('bonus-tally').classList.remove('counting');later(()=>stepAt(index+1),120);
+        $('bonus-tally').classList.remove('counting');later(()=>stepAt(index+1),450);
       };
       frame=requestAnimationFrame(tick);
     }
-    stepAt(0);
+    later(()=>stepAt(0),650);
   });
 }
 

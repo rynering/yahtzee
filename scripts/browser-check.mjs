@@ -127,6 +127,7 @@ try{
       await page.getByRole('button',{name:'Resume game',exact:true}).click();
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.locator(`[data-category="${spec.id}"]`).click();
+      const awardStarted=Date.now();
       await page.locator('#confirm-score').click();
       await page.waitForSelector('#bonus-dialog[open]');
       const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('lucky-roll-v1')));
@@ -152,7 +153,19 @@ try{
       if(['yahtzee','upper','combined'].includes(spec.name))await page.screenshot({path:`artifacts/screenshots/bonus-${spec.name}.png`});
       const notes=await page.evaluate(()=>window.__audioNotes);
       assert.ok(spec.sound?notes>0:notes===0,'celebration audio must follow the sound setting');
-      if(spec.skip)await page.locator('#bonus-continue').click();
+      if(!spec.skip||spec.motion==='reduce'){
+        await page.waitForFunction(to=>document.querySelector('#bonus-result').textContent.includes(`total is ${to}`),spec.total);
+        assert.equal(await page.locator('#bonus-tally').innerText(),String(spec.total));
+        const finalButton=await page.locator('#bonus-continue').boundingBox();
+        assert.ok(finalButton.y+finalButton.height<=spec.height,'Continue must remain visible after the count finishes');
+        if(spec.name==='yahtzee')assert.ok(Date.now()-awardStarted>=3400,'Yahtzee count-up should leave time to follow the points');
+        if(spec.name==='yahtzee'||spec.motion==='reduce'){
+          await page.waitForTimeout(1800);
+          assert.ok(await page.locator('#bonus-dialog').isVisible(),'the celebration must stay open after tallying until Continue is pressed');
+          assert.match(await page.locator('#bonus-summary').innerText(),/Tap Continue/);
+        }
+      }
+      await page.locator('#bonus-continue').click();
       await page.waitForSelector('#bonus-dialog',{state:'hidden'});
       assert.equal(await page.locator('#current-score').innerText(),String(spec.total));
       if(spec.finished){
