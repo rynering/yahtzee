@@ -4,6 +4,7 @@ let storageOK=true,saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}'
 function validGame(g){return g&&Array.isArray(g.dice)&&g.dice.length===5&&g.dice.every(x=>Number.isInteger(x)&&x>=1&&x<=6)&&Array.isArray(g.held)&&g.held.length===5&&g.held.every(x=>typeof x==='boolean')&&Number.isInteger(g.rolls)&&g.rolls>=0&&g.rolls<=3&&Number.isInteger(g.extra)&&g.extra>=0&&g.scores&&categories.every(c=>g.scores[c.id]===null||(Number.isInteger(g.scores[c.id])&&g.scores[c.id]>=0&&g.scores[c.id]<=50));}
 let resumableGame=validGame(saved.game)&&(saved.game.rolls>0||categories.some(c=>saved.game.scores[c.id]!==null))?saved.game:null;
 let game=freshGame(),sound=saved.sound!==false,records=Array.isArray(saved.records)?saved.records.filter(r=>Number.isInteger(r.score)&&r.score>=0&&typeof r.date==='string').slice(0,10):[];
+let scoreFilter='remaining';
 let selected=null,rolling=false,audioContext,installPrompt=null;
 const completed=()=>categories.every(c=>game.scores[c.id]!==null);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({game:resumableGame||game,sound,records}));}catch{storageOK=false;$('save-note').textContent='Saving is unavailable in this browser. Keep this tab open to continue.';}}
@@ -14,7 +15,24 @@ function renderDice(){
   $('dice').innerHTML=game.dice.map((value,i)=>`<div class="die-wrap ${game.held[i]?'is-held':''}" style="--roll-delay:${i*35}ms;--rest-angle:${[-7,4,0,-4,7][i]}deg"><button class="die ${unrolled?'unrolled':''}" data-die="${i}" aria-label="${unrolled?`Die ${i+1}: not rolled yet`:`Die ${i+1}: ${value}. ${game.held[i]?'Held. Tap to release.':'Tap to hold.'}`}" aria-pressed="${game.held[i]}" ${!game.rolls||rolling||completed()?'disabled':''}>${unrolled?'<span class="unrolled-mark" aria-hidden="true">?</span>':dieMarkup(value)}</button><span class="held-tag">${game.held[i]?'HELD':''}</span></div>`).join('');
   if(focus!==undefined)$('dice').querySelector(`[data-die="${focus}"]`)?.focus({preventScroll:true});
 }
-function renderRows(){const allowed=available(game),icons=['','','','','','','⋮','⁙','⌂','⌁','↗','✧','↺'];const row=(c,i)=>{const locked=game.scores[c.id]!==null,ready=game.rolls>0&&!rolling&&!completed(),possible=ready&&!locked&&allowed.includes(c.id),v=locked?game.scores[c.id]:possible?scoreFor(c.id,game):'—';return `<button class="score-row ${selected===c.id?'selected':''}" data-category="${c.id}" ${!possible?'disabled':''} aria-pressed="${selected===c.id}" aria-label="${c.name}: ${locked?`${v} points, used`:possible?`${v} points. ${c.hint}. Select to score`:'not available'}" title="${c.hint}"><span class="row-title">${c.face?`<span class="mini-die" aria-hidden="true">${String.fromCodePoint(0x267f+c.face)}</span>`:`<span class="category-icon" aria-hidden="true">${icons[i]}</span>`}${c.name}</span><span class="score-value ${locked?'locked':possible?'possible':''} ${v===0?'zero':''}">${v}</span></button>`;};$('upper-rows').innerHTML=categories.slice(0,6).map((c,i)=>row(c,i)).join('');$('lower-rows').innerHTML=categories.slice(6).map((c,i)=>row(c,i+6)).join('');}
+function renderRows(){
+  const allowed=available(game),ready=game.rolls>0&&!rolling&&!completed();
+  const row=c=>{
+    const used=game.scores[c.id]!==null,possible=ready&&!used&&allowed.includes(c.id);
+    const points=used?game.scores[c.id]:possible?scoreFor(c.id,game):'—';
+    const state=used?'used':possible?'open':'waiting';
+    const status=used?'✓ Used':possible?'Available':ready?'Joker rule':'Not rolled yet';
+    return `<button class="score-row state-${state} ${selected===c.id?'selected':''}" data-category="${c.id}" ${!possible?'disabled':''} aria-pressed="${selected===c.id}" aria-label="${c.name}: ${used?`${points} points, already used`:possible?`${points} points available. ${c.hint}. Select to score`:status}" title="${c.hint}"><span class="row-copy"><span class="row-title">${c.name}</span><span class="category-status">${status}</span></span><span class="score-value ${used?'locked':possible?'possible':''} ${points===0?'zero':''}">${points}<span class="points-label">pts</span></span></button>`;
+  };
+  const visible=c=>scoreFilter==='all'||(scoreFilter==='used'?game.scores[c.id]!==null:game.scores[c.id]===null);
+  const empty=`<p class="empty-section">${scoreFilter==='used'?'No categories used here yet.':'All categories here are used.'}</p>`;
+  $('upper-rows').innerHTML=categories.slice(0,6).filter(visible).map(row).join('')||empty;
+  $('lower-rows').innerHTML=categories.slice(6).filter(visible).map(row).join('')||empty;
+  const used=categories.filter(c=>game.scores[c.id]!==null).length;
+  $('remaining-count').textContent=13-used;$('used-count').textContent=used;
+  for(const filter of ['remaining','used','all'])$('score-filter-'+filter).setAttribute('aria-pressed',String(scoreFilter===filter));
+}
+
 function render(){
   const t=totals(game),filled=categories.filter(c=>game.scores[c.id]!==null).length,done=completed();
   $('resume-banner').hidden=!resumableGame;
@@ -34,10 +52,10 @@ function render(){
   $('choose-score').textContent=done?'View scores':'Choose score';
   $('view-scorecard').disabled=rolling;
   $('score-dialog-title').textContent=done?'Your final scorecard':game.rolls?'Choose your score':'Your scorecard';
-  $('score-dialog-hint').textContent=done?'All 13 rounds complete. Well played.':!game.rolls?'Roll first to start scoring.':available(game).length===1&&game.scores.yahtzee!==null&&isYahtzee(game.dice)?'Joker rule: choose the matching upper category.':'Tap a category, then confirm below.';
+  $('score-dialog-hint').textContent=done?'All 13 rounds complete. Well played.':!game.rolls?'Roll first to start scoring.':available(game).length===1&&game.scores.yahtzee!==null&&isYahtzee(game.dice)?'Joker rule: choose the matching upper category.':scoreFilter==='used'?'These categories are already used and locked.':scoreFilter==='all'?'Available categories can be chosen. Used ones are locked.':'Choose a remaining category, then confirm.';
   $('score-roll-number').textContent=done?'Game complete':game.rolls?`Roll ${game.rolls} of 3`:'Ready to roll';
   $('score-dice').setAttribute('aria-label',game.rolls||done?`Dice: ${game.dice.join(', ')}`:'Dice not rolled yet');
-  $('score-dice').innerHTML=game.dice.map((value,i)=>`<span class="score-mini-die ${game.held[i]?'mini-held':''}" aria-hidden="true">${game.rolls||done?dieMarkup(value):'?'}</span>`).join('');
+  $('score-dice').innerHTML=game.dice.map((value,i)=>`<span class="score-die-item" aria-hidden="true"><span class="score-mini-die ${game.held[i]?'mini-held':''}">${game.rolls||done?dieMarkup(value):'<span class="score-unrolled">?</span>'}</span><strong class="score-die-number">${game.rolls||done?value:'—'}</strong></span>`).join('');
   $('roll-progress').innerHTML=Array.from({length:3},(_,i)=>`<i class="${i+1===displayedRoll?'current':i<displayedRoll?'used':''}">${i+1}</i>`).join('');
   $('sound').innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/>${sound?'<path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>':'<path d="m16 9 6 6m0-6-6 6"/>'}</svg> Sound ${sound?'on':'off'}`;$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',`Sound ${sound?'on. Turn off':'off. Turn on'}`);
   renderDice();renderRows();
@@ -73,7 +91,7 @@ async function roll(){
 }
 function openScorecard(){
   if(rolling)return;
-  selected=null;render();
+  selected=null;scoreFilter=completed()?'used':'remaining';render();
   if(!$('score-dialog').open)$('score-dialog').showModal();
   document.body.classList.add('score-open');
 }
@@ -91,6 +109,7 @@ function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)r
 function installHelp(){showModal(`<div class="eyebrow">YOUR FAVORITE GAME. ONE TAP AWAY.</div><h2>Make yourself at home.</h2><p>Open this game’s link on the phone or tablet where you want to play.</p><h3>iPhone or iPad</h3><p>Open in <strong>Safari</strong>, tap <strong>Share</strong> (the square with an arrow), choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>. You may need to tap “More” to find it.</p><h3>Android</h3><p>Open in <strong>Chrome</strong>, tap the <strong>⋮ menu</strong>, then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p><h3>On a computer</h3><p>Chrome and Edge offer an install button in the address bar when installation is available.</p><p>After the first complete online visit, the game works offline. Play in the installed app to keep all its scores together.</p>${installPrompt?'<button class="primary-button" id="install-now">Install Lucky Roll</button>':''}<div class="dialog-actions"><button class="secondary-button" data-close>Got it</button></div>`);}
 $('roll').addEventListener('click',roll);$('new-game').addEventListener('click',requestReset);$('rules').addEventListener('click',rules);$('history').addEventListener('click',history);$('sound').addEventListener('click',()=>{sound=!sound;persist();render();tone(660,.08);});
 $('choose-score').addEventListener('click',openScorecard);
+$('score-filters').addEventListener('click',e=>{const button=e.target.closest('[data-score-filter]');if(!button)return;scoreFilter=button.dataset.scoreFilter;selected=null;render();$('score-scroll').scrollTop=0;});
 $('view-scorecard').addEventListener('click',openScorecard);
 $('close-score').addEventListener('click',closeScorecard);
 $('score-dialog').addEventListener('close',()=>document.body.classList.remove('score-open'));

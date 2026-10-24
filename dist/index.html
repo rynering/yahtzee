@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#214d3e"><meta name="description" content="Your favorite dice game, always at hand. Play classic Yahtzee with animated dice, optional sound, and personal high scores.">
   <title>Lucky Roll — A classic, always at hand.</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="stylesheet" href="style.css?v=6">
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="site-header">
@@ -32,16 +32,17 @@
   </main>
   <dialog id="score-dialog" class="score-dialog" aria-labelledby="score-dialog-title" aria-describedby="score-dialog-hint">
     <section class="scorecard" aria-label="Scorecard">
-      <div class="scorecard-heading"><div><h2 id="score-dialog-title">Choose your score</h2><p id="score-dialog-hint">Tap a category, then confirm below.</p></div><button id="close-score" class="score-close" aria-label="Back to dice">✕</button></div>
-      <div class="score-roll-summary"><div id="score-dice" class="score-dice" role="img" aria-label="Dice not rolled yet"></div><span id="score-roll-number">Ready to roll</span></div>
-      <div class="score-grid">
+      <div class="scorecard-top"><div class="scorecard-heading"><div><h2 id="score-dialog-title">Choose your score</h2><p id="score-dialog-hint">Tap a category, then confirm below.</p></div><button id="close-score" class="score-close" aria-label="Back to dice">✕</button></div>
+      <div class="score-roll-summary"><div class="score-dice-heading"><strong>Your rolled dice</strong><span id="score-roll-number">Ready to roll</span></div><div id="score-dice" class="score-dice" role="img" aria-label="Dice not rolled yet"></div></div>
+      <div class="score-filters" id="score-filters" role="group" aria-label="Show score categories"><button id="score-filter-remaining" data-score-filter="remaining" aria-pressed="true">Remaining <span id="remaining-count">13</span></button><button id="score-filter-used" data-score-filter="used" aria-pressed="false">Used <span id="used-count">0</span></button><button id="score-filter-all" data-score-filter="all" aria-pressed="false">All</button></div></div>
+      <div class="score-scroll" id="score-scroll" tabindex="0" role="region" aria-label="Score categories"><div class="score-grid">
         <div class="score-section"><div class="section-heading"><span>UPPER SECTION</span><span>PTS</span></div><div id="upper-rows"></div><div class="bonus-box"><div><strong>Upper bonus <span>+35</span></strong><p id="bonus-text">Reach 63 to earn 35 extra points</p></div><span id="bonus-count">0 / 63</span><div class="bonus-track"><div id="bonus-fill"></div></div></div></div>
         <div class="score-section"><div class="section-heading"><span>LOWER SECTION</span><span>PTS</span></div><div id="lower-rows"></div></div>
       </div>
-      <div id="extra-bonus" hidden></div>
+      <div id="extra-bonus" hidden></div></div>
       <div class="score-footer"><div class="scorecard-total"><span>Total <strong id="total-score">0</strong></span><span id="filled-count">0 of 13 filled</span></div><div id="score-action" class="score-action"><p>Roll the dice to begin.</p></div></div>
     </section>
   </dialog>
   <dialog id="modal"><button class="close-modal" aria-label="Close dialog">✕</button><div id="modal-content"></div></dialog>
-  <script type="module" src="app.mjs?v=6"></script>
+  <script type="module" src="app.mjs?v=7"></script>
 </body></html>

@@ -23,7 +23,7 @@ Visit once while online and wait for the “Ready for offline play” message be
 
 From this directory: `python3 -m http.server 8000 --directory dist`, then open `http://localhost:8000`.
 
-Run rule tests: `node --test tests/engine.test.mjs`.
+Run rule tests: `node --test tests/engine.test.mjs`. The GitHub Pages workflow also checks the real browser layout at phone and desktop sizes, verifies scoring and offline play, and saves screenshots before deployment. To run that check locally, install `playwright@1.62.1`, set `CHROME_BIN` if Chrome is not at `/usr/bin/google-chrome`, and run `node scripts/browser-check.mjs`.
 
 ## Updating
 

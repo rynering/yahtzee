@@ -22,6 +22,18 @@ jobs:
         with:
           node-version: 22
       - run: node --test tests/engine.test.mjs
+      - name: Install browser check tooling
+        run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --package-lock=false playwright@1.62.1
+      - name: Check phone and desktop layouts
+        timeout-minutes: 5
+        run: node scripts/browser-check.mjs
+      - name: Save layout screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-screenshots
+          path: artifacts/screenshots
+          retention-days: 7
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
