@@ -51,7 +51,7 @@ function render(){
   $('choose-score').disabled=rolling||(!game.rolls&&!done);
   $('choose-score').textContent=done?'View scores':'Choose score';
   $('view-scorecard').disabled=rolling;
-  $('score-dialog-title').textContent=done?'Your final scorecard':game.rolls?'Choose your score':'Your scorecard';
+  $('score-dialog-title').textContent=done?'Final scorecard':game.rolls?'Choose score':'Your scorecard';
   $('score-dialog-hint').textContent=done?'All 13 rounds complete. Well played.':!game.rolls?'Roll first to start scoring.':available(game).length===1&&game.scores.yahtzee!==null&&isYahtzee(game.dice)?'Joker rule: choose the matching upper category.':scoreFilter==='used'?'These categories are already used and locked.':scoreFilter==='all'?'Available categories can be chosen. Used ones are locked.':'Choose a remaining category, then confirm.';
   $('score-roll-number').textContent=done?'Game complete':game.rolls?`Roll ${game.rolls} of 3`:'Ready to roll';
   $('score-dice').setAttribute('aria-label',game.rolls||done?`Dice: ${game.dice.join(', ')}`:'Dice not rolled yet');

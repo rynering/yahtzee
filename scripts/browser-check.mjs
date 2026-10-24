@@ -41,13 +41,14 @@ try{
         die:document.querySelector('.score-mini-die').getBoundingClientRect().width,
         pip:document.querySelector('.score-mini-die .pip.visible').getBoundingClientRect().width,
         listHeight:document.querySelector('#score-scroll').clientHeight,
+        fullRows:[...document.querySelectorAll('.score-row')].filter(e=>{const a=e.getBoundingClientRect(),b=document.querySelector('#score-scroll').getBoundingClientRect();return a.top>=b.top&&a.bottom<=b.bottom;}).length,
         rowOverflow:[...document.querySelectorAll('.score-row')].some(e=>e.scrollWidth>e.clientWidth+1),
         dialogOverflow:document.querySelector('#score-dialog').scrollWidth>document.querySelector('#score-dialog').clientWidth+1
       }));
       assert.ok(metrics.font>=16,'category text must stay readable');
       assert.ok(metrics.die>=46,'rolled dice must stay large');
       assert.ok(metrics.pip>=5,'die pips must stay readable');
-      assert.ok(metrics.listHeight>=75,'score list needs usable space');
+      assert.ok(metrics.listHeight>=180&&metrics.fullRows>=4,'at least two rows per column must fit below the pinned dice: '+JSON.stringify(metrics));
       assert.ok(metrics.pageWidth<=metrics.width&&!metrics.rowOverflow&&!metrics.dialogOverflow,JSON.stringify(metrics));
       const before=await page.locator('#score-dice').boundingBox();
       await page.locator('#score-scroll').evaluate(e=>e.scrollTop=e.scrollHeight);
