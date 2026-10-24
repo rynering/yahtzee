@@ -121,6 +121,12 @@ try{
       const sum=Object.entries(stored.game.scores).reduce((n,[,v])=>n+(v||0),0)+stored.game.extra+(Object.values(stored.game.scores).slice(0,6).reduce((n,v)=>n+(v||0),0)>=63?35:0);
       assert.equal(sum,spec.total,'the final real score must already be saved before animation');
       assert.deepEqual(await page.locator('.bonus-step strong').allTextContents(),spec.steps.map(p=>'+'+p));
+      const diceMetrics=await page.evaluate(()=>{
+        const card=document.querySelector('#bonus-dialog').getBoundingClientRect();
+        return [...document.querySelectorAll('#bonus-dice .score-mini-die')].map(e=>{const r=e.getBoundingClientRect();return {width:r.width,height:r.height,inside:r.left>=card.left&&r.right<=card.right,pip:e.querySelector('.pip.visible').getBoundingClientRect().width};});
+      });
+      assert.equal(diceMetrics.length,5);
+      assert.ok(diceMetrics.every(d=>d.width>=36&&d.width<=57&&d.height<=57&&d.inside&&d.pip>=4),'all five celebration dice and their pips must fit: '+JSON.stringify(diceMetrics));
       const button=await page.locator('#bonus-continue').boundingBox();
       assert.ok(button.y>=0&&button.y+button.height<=spec.height,'Continue must remain visible');
       assert.ok(await page.locator('#roll').isDisabled(),'new rolls must wait until the celebration finishes');
