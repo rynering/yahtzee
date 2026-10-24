@@ -101,13 +101,13 @@ try{
     finally{await context.close();}
   }
   const awardCases=[
-    {name:'yahtzee',width:390,height:844,id:'yahtzee',dice:[4,4,4,4,4],scores:{},total:50,steps:[50],motion:'no-preference'},
-    {name:'upper',width:320,height:568,id:'sixes',dice:[6,6,6,1,2],scores:{ones:3,twos:6,threes:9,fours:12,fives:15},total:98,steps:[18,35],motion:'no-preference'},
-    {name:'extra-yahtzee',width:390,height:844,id:'fives',dice:[5,5,5,5,5],scores:{yahtzee:50},total:175,steps:[25,100],motion:'no-preference'},
-    {name:'combined',width:320,height:568,id:'sixes',dice:[6,6,6,6,6],scores:{ones:3,twos:6,threes:9,fours:12,fives:15,yahtzee:50},total:260,steps:[30,35,100],motion:'no-preference',skip:true},
-    {name:'reduced-motion',width:390,height:844,id:'yahtzee',dice:[3,3,3,3,3],scores:{},total:50,steps:[50],motion:'reduce',skip:true},
-    {name:'final-round',width:390,height:844,id:'yahtzee',dice:[2,2,2,2,2],scores:Object.fromEntries(['ones','twos','threes','fours','fives','sixes','three','four','full','small','large','chance'].map(k=>[k,0])),total:50,steps:[50],motion:'no-preference',skip:true,finished:true},
-    {name:'sound-on',width:390,height:844,id:'yahtzee',dice:[6,6,6,6,6],scores:{},total:50,steps:[50],motion:'no-preference',skip:true,sound:true}
+    {name:'yahtzee',width:390,height:844,id:'yahtzee',dice:[4,4,4,4,4],scores:{},total:50,award:50,motion:'no-preference'},
+    {name:'upper',width:320,height:568,id:'sixes',dice:[6,6,6,1,2],scores:{ones:3,twos:6,threes:9,fours:12,fives:15},total:98,award:35,motion:'no-preference'},
+    {name:'extra-yahtzee',width:390,height:844,id:'fives',dice:[5,5,5,5,5],scores:{yahtzee:50},total:175,award:100,motion:'no-preference'},
+    {name:'combined',width:320,height:568,id:'sixes',dice:[6,6,6,6,6],scores:{ones:3,twos:6,threes:9,fours:12,fives:15,yahtzee:50},total:260,award:135,motion:'no-preference',interrupt:'new-game'},
+    {name:'reduced-motion',width:390,height:844,id:'yahtzee',dice:[3,3,3,3,3],scores:{},total:50,award:50,motion:'reduce'},
+    {name:'final-round',width:390,height:844,id:'yahtzee',dice:[2,2,2,2,2],scores:Object.fromEntries(['ones','twos','threes','fours','fives','sixes','three','four','full','small','large','chance'].map(k=>[k,0])),total:50,award:50,motion:'no-preference',finished:true},
+    {name:'sound-on',width:390,height:844,id:'yahtzee',dice:[6,6,6,6,6],scores:{},total:50,award:50,motion:'no-preference',interrupt:'roll',sound:true}
   ];
   for(const spec of awardCases){
     const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},reducedMotion:spec.motion,serviceWorkers:'block'});
@@ -129,67 +129,69 @@ try{
       await page.locator(`[data-category="${spec.id}"]`).click();
       const awardStarted=Date.now();
       await page.locator('#confirm-score').click();
-      await page.waitForSelector('#bonus-dialog[open]');
+      await page.waitForSelector('#score-dialog',{state:'hidden'});
+      await page.waitForSelector('#score-celebration',{state:'visible'});
+      assert.equal(await page.locator('dialog[open]').count(),0,'an award must not open a modal or obscure the game');
+      assert.equal(await page.locator('#bonus-dialog').count(),0);
+      assert.ok(await page.locator('#roll').isEnabled(),'the player can roll while the points animate');
+      assert.ok(await page.locator('#new-game').isEnabled());
       const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('lucky-roll-v1')));
-      const sum=Object.entries(stored.game.scores).reduce((n,[,v])=>n+(v||0),0)+stored.game.extra+(Object.values(stored.game.scores).slice(0,6).reduce((n,v)=>n+(v||0),0)>=63?35:0);
-      assert.equal(sum,spec.total,'the final real score must already be saved before animation');
-      assert.deepEqual(await page.locator('.bonus-step strong').allTextContents(),spec.steps.map(p=>'+'+p));
-      const diceMetrics=await page.evaluate(()=>{
-        const card=document.querySelector('#bonus-dialog').getBoundingClientRect();
-        return [...document.querySelectorAll('#bonus-dice .score-mini-die')].map(e=>{const r=e.getBoundingClientRect();return {width:r.width,height:r.height,inside:r.left>=card.left&&r.right<=card.right,pip:e.querySelector('.pip.visible').getBoundingClientRect().width};});
-      });
-      assert.equal(diceMetrics.length,5);
-      assert.ok(diceMetrics.every(d=>d.width>=36&&d.width<=57&&d.height<=57&&d.inside&&d.pip>=4),'all five celebration dice and their pips must fit: '+JSON.stringify(diceMetrics));
-      const button=await page.locator('#bonus-continue').boundingBox();
-      assert.ok(button.y>=0&&button.y+button.height<=spec.height,'Continue must remain visible');
-      assert.ok(await page.locator('#roll').isDisabled(),'new rolls must wait until the celebration finishes');
+      const sum=Object.values(stored.game.scores).reduce((n,v)=>n+(v||0),0)+stored.game.extra+(Object.values(stored.game.scores).slice(0,6).reduce((n,v)=>n+(v||0),0)>=63?35:0);
+      assert.equal(sum,spec.total,'the real score must already be saved');
+      const awardBox=await page.locator('#score-celebration').boundingBox(),diceBox=await page.locator('#dice').boundingBox(),rollBox=await page.locator('#roll').boundingBox();
+      assert.ok(awardBox.y>=0&&awardBox.y+awardBox.height<=spec.height,'in-place award must stay on screen');
+      assert.ok(diceBox.y>=0&&diceBox.y+diceBox.height<=awardBox.y,'the scored dice remain visible above the award');
+      assert.ok(awardBox.y+awardBox.height<=rollBox.y,'the award must not cover the Roll button');
+      for(let i=0;i<5;i++)assert.match(await page.locator(`[data-die="${i}"]`).getAttribute('aria-label'),new RegExp(`: ${spec.dice[i]}\\.`),'the roll screen must retain the dice that earned the award');
       if(spec.motion==='reduce'){
-        assert.equal(await page.locator('#bonus-tally').innerText(),String(spec.total));
-        assert.equal(await page.locator('#bonus-pop').evaluate(e=>e.getAnimations().length),0);
-        assert.equal(await page.locator('#bonus-tally').evaluate(e=>e.getAnimations().length),0);
+        assert.equal(await page.locator('#inline-award-total').innerText(),String(spec.total));
+        assert.equal(await page.locator('#inline-award-points').evaluate(e=>e.getAnimations().length),0);
+        assert.equal(await page.locator('#current-score').evaluate(e=>e.getAnimations().length),0);
       }else{
-        await page.waitForFunction(({from,to})=>{const n=Number(document.querySelector('#bonus-tally').textContent);return n>from&&n<to;},{from:oldTotal,to:spec.total});
+        await page.waitForFunction(({from,to})=>{const n=Number(document.querySelector('#inline-award-total').textContent);return n>from&&n<to;},{from:oldTotal,to:spec.total});
       }
-      if(['yahtzee','upper','combined'].includes(spec.name))await page.screenshot({path:`artifacts/screenshots/bonus-${spec.name}.png`});
+      assert.ok(await page.evaluate(()=>document.querySelector('#current-score').textContent===document.querySelector('#inline-award-total').textContent),'the in-place tally and main score stay in sync');
+      if(['yahtzee','upper','combined'].includes(spec.name))await page.screenshot({path:`artifacts/screenshots/inline-award-${spec.name}.png`});
       const notes=await page.evaluate(()=>window.__audioNotes);
-      assert.ok(spec.sound?notes>0:notes===0,'celebration audio must follow the sound setting');
-      if(!spec.skip||spec.motion==='reduce'){
-        await page.waitForFunction(to=>document.querySelector('#bonus-result').textContent.includes(`total is ${to}`),spec.total);
-        assert.equal(await page.locator('#bonus-tally').innerText(),String(spec.total));
-        const finalButton=await page.locator('#bonus-continue').boundingBox();
-        assert.ok(finalButton.y+finalButton.height<=spec.height,'Continue must remain visible after the count finishes');
-        if(spec.name==='yahtzee')assert.ok(Date.now()-awardStarted>=3400,'Yahtzee count-up should leave time to follow the points');
-        if(spec.name==='yahtzee'||spec.motion==='reduce'){
-          await page.waitForTimeout(1800);
-          assert.ok(await page.locator('#bonus-dialog').isVisible(),'the celebration must stay open after tallying until Continue is pressed');
-          assert.match(await page.locator('#bonus-summary').innerText(),/Tap Continue/);
-        }
-      }
-      await page.locator('#bonus-continue').click();
-      await page.waitForSelector('#bonus-dialog',{state:'hidden'});
-      assert.equal(await page.locator('#current-score').innerText(),String(spec.total));
-      if(spec.finished){
-        await page.waitForSelector('#modal[open]');
-        assert.equal(stored.records[0].score,spec.total,'final-round high score must be saved before animation');
-        assert.equal(await page.locator('#needed-count').innerText(),'0 left');
-        assert.match(await page.locator('#needed-list').innerText(),/All categories filled/);
-      }else{
-        assert.ok(await page.locator('#roll').isEnabled());
-        await page.locator('#view-scorecard').click();
-        assert.equal(await page.locator('#bonus-dialog').isVisible(),false,'viewing a scorecard must not replay an award');
-        await page.locator('#close-score').click();
-      }
-      if(spec.name==='combined'){
+      assert.ok(spec.sound?notes>0:notes===0,'inline award audio must follow the sound toggle');
+      if(spec.interrupt==='new-game'){
         await page.getByRole('button',{name:'New game',exact:true}).click();
         await page.getByRole('button',{name:'Start new game',exact:true}).click();
-        await page.waitForTimeout(1500);
-        assert.equal(await page.locator('#current-score').innerText(),'0','cancelled animation must not change a later game');
+        await page.waitForTimeout(1800);
+        assert.equal(await page.locator('#current-score').innerText(),'0');
+        assert.equal(await page.locator('#score-celebration').isVisible(),false,'restart must cancel the previous count-up');
         assert.equal(await page.locator('#needed-count').innerText(),'13 left');
-        assert.match(await page.locator('#needed-list').innerText(),/All 13 categories/);
+      }else if(spec.interrupt==='roll'){
+        await page.getByRole('button',{name:'Roll dice',exact:true}).click();
+        await page.waitForFunction(()=>!document.querySelector('#roll').disabled);
+        assert.equal(await page.locator('#score-celebration').isVisible(),false);
+        assert.equal(await page.locator('#current-score').innerText(),String(spec.total),'starting another roll must settle the correct total');
+      }else{
+        await page.waitForFunction(to=>document.querySelector('#inline-award-total').textContent===String(to)&&!document.querySelector('.stats').classList.contains('score-counting'),spec.total);
+        assert.equal(await page.locator('#inline-award-points').innerText(),'+'+spec.award);
+        if(spec.name==='yahtzee')assert.ok(Date.now()-awardStarted>=3400,'keep the readable count-up timing');
+        if(spec.name==='yahtzee'||spec.motion==='reduce'){
+          await page.waitForTimeout(1800);
+          assert.ok(await page.locator('#score-celebration').isVisible(),'award remains readable until the player starts another roll');
+        }
+        assert.equal(await page.locator('#current-score').innerText(),String(spec.total));
+        if(spec.finished){
+          assert.equal(stored.records[0].score,spec.total);
+          assert.equal(await page.locator('dialog[open]').count(),0,'a final-round award remains on the current screen too');
+          assert.equal(await page.locator('#needed-count').innerText(),'0 left');
+          await page.getByRole('button',{name:'Play again',exact:true}).click();
+          assert.equal(await page.locator('#current-score').innerText(),'0');
+          assert.equal(await page.locator('#score-celebration').isVisible(),false);
+        }else{
+          await page.locator('#view-scorecard').click();
+          assert.equal(await page.locator('#total-score').innerText(),String(spec.total));
+          await page.locator('#close-score').click();
+          assert.ok(await page.locator('#score-celebration').isVisible());
+        }
       }
       assert.deepEqual(errors,[]);
-      console.log(`PASS celebration ${spec.name}: correct saved score, count-up, sound preference, skip, and next-step behavior.`);
-    }catch(e){await page.screenshot({path:`artifacts/screenshots/failure-bonus-${spec.name}.png`});throw e;}
+      console.log(`PASS inline award ${spec.name}: no popup, readable dice and points, live controls, correct saved total, and safe interruptions.`);
+    }catch(e){await page.screenshot({path:`artifacts/screenshots/failure-inline-${spec.name}.png`});throw e;}
     finally{await context.close();}
   }
   const offline=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});

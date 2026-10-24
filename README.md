@@ -1,6 +1,6 @@
 # Lucky Roll
 
-A calm, accessible, single-player Yahtzee PWA. Five animated dice, classic scoring (including Joker rules), optional synthesized sound, a saved game, and the ten best completed scores. No account, database, or build step is needed.
+A calm, accessible, single-player Yahtzee PWA. Five animated dice, classic scoring (including Joker rules), optional synthesized sound, a saved game, and the ten best completed scores. No account, database, or build step is needed. Upper bonuses and Yahtzees animate directly in the roll-status area, with no celebration popup or Continue button. The points remain visible until the next roll; starting a roll or new game safely settles the total.
 
 ## Deploy with GitHub Pages
 
