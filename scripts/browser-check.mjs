@@ -133,6 +133,8 @@ try{
       await page.waitForSelector('#score-celebration',{state:'visible'});
       assert.equal(await page.locator('dialog[open]').count(),0,'an award must not open a modal or obscure the game');
       assert.equal(await page.locator('#bonus-dialog').count(),0);
+      assert.ok(await page.locator('#inline-award-points').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=36),'added points must be prominent');
+      assert.ok(await page.locator('#score-celebration').evaluate(e=>getComputedStyle(e).color===getComputedStyle(e.querySelector('#inline-award-points')).color&&getComputedStyle(e).color===getComputedStyle(e.querySelector('#inline-award-total')).color),'award numbers must retain dark, readable text on gold');
       assert.ok(await page.locator('#roll').isEnabled(),'the player can roll while the points animate');
       assert.ok(await page.locator('#new-game').isEnabled());
       const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('lucky-roll-v1')));
