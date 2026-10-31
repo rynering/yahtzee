@@ -206,7 +206,7 @@ try{
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await offline.setOffline(true);await page.reload();
   assert.equal(await page.locator('#roll-status-label').innerText(),'Ready to roll');
-  await page.screenshot({path:'artifacts/screenshots/game-night-ready.png'});
+  await page.screenshot({path:'artifacts/screenshots/game-ready.png'});
   await page.getByRole('button',{name:'Roll dice',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('#choose-score').disabled);
   await page.getByRole('button',{name:'Choose score',exact:true}).click();
@@ -224,12 +224,15 @@ async function checkContrast(page,pairs){
     };
     return pairs.map(([text,surface])=>{
       const foreground=getComputedStyle(document.querySelector(text)).color;
-      // Check against the lightest actual gradient stop behind the light tray text.
+      // Use the lowest contrast across all background stops for either text polarity.
       const style=getComputedStyle(document.querySelector(surface));
       const stops=style.backgroundImage.match(/rgba?\([^)]+\)/g);
-      const background=stops?stops.reduce((a,b)=>luminance(a)>luminance(b)?a:b):style.backgroundColor;
-      const a=luminance(foreground),b=luminance(background);
-      return {text,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
+      const a=luminance(foreground);
+      const ratios=(stops||[style.backgroundColor]).map(background=>{
+        const b=luminance(background);
+        return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+      });
+      return {text,ratio:Math.min(...ratios)};
     });
   },pairs);
   for(const {text,ratio} of readings)assert.ok(ratio>=4.5,`${text} must retain readable contrast (got ${ratio.toFixed(2)}:1)`);
