@@ -30,6 +30,13 @@ try{
     try{
       await page.goto(origin,{waitUntil:'networkidle'});
       await page.getByRole('button',{name:'Resume game',exact:true}).click();
+      const roundLayout=await page.locator('#round').evaluate(e=>{
+        const original=e.textContent;e.textContent='13';
+        const line=e.parentElement,box=line.getBoundingClientRect();
+        const metrics={height:box.height,overflow:line.scrollWidth>line.clientWidth+1};
+        e.textContent=original;return metrics;
+      });
+      assert.ok(roundLayout.height<40&&!roundLayout.overflow,'the full round counter must fit on one line, including round 13');
       assert.equal(await page.locator('#needed-count').innerText(),'10 left');
       assert.equal(await page.locator('[data-needed]').count(),10);
       assert.equal(await page.locator('[data-needed="ones"], [data-needed="twos"], [data-needed="yahtzee"]').count(),0,'used categories, including zeroes, must not appear in the roll reminder');

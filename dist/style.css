@@ -90,6 +90,9 @@ body{background:var(--casing);color:#e5e8dc}
 .stats>div{border-color:#96a47d}
 .stat-label,.stats small{color:#3c4b32}
 .stats strong,.roll-progress i,.score-value,.score-die-number{font-family:ui-monospace,'Courier New',monospace}
+.stats>div:last-child{padding-left:10px;padding-right:10px}
+.stats>div:last-child strong{white-space:nowrap;font-family:var(--sans);font-size:26px;letter-spacing:-.6px}
+.stats>div:last-child small{font-size:14px;letter-spacing:-.2px}
 .scorecard-link{color:#344b28}
 .stats .gold{color:#5b461c}
 .tray{background:#bdc99d;color:var(--ink);border-color:#87956f;box-shadow:inset 0 3px 12px #25332222,0 5px 0 #151a16}
