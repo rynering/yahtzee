@@ -38,6 +38,7 @@ try{
       assert.ok(reminder.y+reminder.height<=dice.y,'remaining categories must sit above the dice');
       assert.ok(await page.locator('#needed-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'reminder must wrap without horizontal overflow');
       assert.ok(await page.locator('#needed-list').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=14),'reminder text must remain readable');
+      await checkContrast(page,[['.brand','body'],['.needed-list','.tray'],['.hold-hint','.tray'],['#roll','#roll'],['#choose-score','#choose-score'],['#new-game','#new-game'],['#current-score','.stats'],['.stat-label','.stats'],['.save-note','body']]);
       await page.screenshot({path:`artifacts/screenshots/roll-reminder-${viewport.width}.png`});
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.waitForSelector('#score-dialog[open]');
@@ -75,6 +76,7 @@ try{
       assert.equal(await page.locator('.score-row').count(),13);
       assert.equal(await page.locator('.state-used').count(),3);
       assert.equal(await page.locator('.state-open').count(),10);
+      await checkContrast(page,[['.state-open .row-title','.state-open'],['.state-open .category-status','.state-open'],['.state-used .row-title','.state-used'],['.state-used .category-status','.state-used'],['.state-used .score-value','.state-used']]);
       await page.screenshot({path:`artifacts/screenshots/scorecard-${viewport.width}.png`});
       await page.locator('[data-category="full"]').click();
       assert.match(await page.locator('#confirm-score').innerText(),/Take a zero/);
@@ -204,6 +206,7 @@ try{
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await offline.setOffline(true);await page.reload();
   assert.equal(await page.locator('#roll-status-label').innerText(),'Ready to roll');
+  await page.screenshot({path:'artifacts/screenshots/game-night-ready.png'});
   await page.getByRole('button',{name:'Roll dice',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('#choose-score').disabled);
   await page.getByRole('button',{name:'Choose score',exact:true}).click();
@@ -212,3 +215,21 @@ try{
   await offline.close();
   console.log('PASS offline: cached game loads, rolls, and opens the scorecard.');
 }finally{await browser?.close();await new Promise(r=>server.close(r));}
+
+async function checkContrast(page,pairs){
+  const readings=await page.evaluate(pairs=>{
+    const luminance=color=>{
+      const rgb=color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+      return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
+    };
+    return pairs.map(([text,surface])=>{
+      const foreground=getComputedStyle(document.querySelector(text)).color;
+      // The navy tray is a gradient; use its lightest stop for a conservative check.
+      const background=surface==='.tray'?'rgb(48,78,115)':getComputedStyle(document.querySelector(surface)).backgroundColor;
+      const a=luminance(foreground),b=luminance(background);
+      return {text,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
+    });
+  },pairs);
+  for(const {text,ratio} of readings)assert.ok(ratio>=4.5,`${text} must retain readable contrast (got ${ratio.toFixed(2)}:1)`);
+}
+
