@@ -155,3 +155,76 @@ body{background:var(--casing);color:#e5e8dc}
 .score-celebration{background:linear-gradient(115deg,#f3d18c,#e8ad40);color:#253322}
 .score-celebration .inline-award-points,.score-celebration .inline-award-caption strong{color:#253322}
 .stats.score-counting #current-score{color:#253322}
+
+/* Handheld housing and LCD: the display and physical controls are separate surfaces. */
+:root{--lcd-font:'Courier New',monospace}
+body{background:#202321}
+.site-header{max-width:900px;height:78px}
+.brand{font-family:var(--sans);font-size:26px;font-weight:800;letter-spacing:1px;text-transform:uppercase;gap:10px}
+.brand-icon{width:32px;height:32px;border-radius:5px;transform:none;font-size:28px}
+.intro{max-width:560px;padding:24px 0 18px}
+.intro h1{font-family:var(--sans);font-size:27px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;line-height:1.15;margin:5px 0}
+.intro p{font-size:12px}.intro .eyebrow{font-size:10px;letter-spacing:1.4px}
+.intro .new-game-control{margin:0}
+.game-layout{grid-template-columns:minmax(0,560px)}
+.handheld{position:relative;padding:16px;background:linear-gradient(135deg,#454b46,#303631);border:2px solid #5f685e;border-radius:24px 24px 36px 36px;box-shadow:inset 1px 1px 0 #899080,inset -2px -3px 0 #242a24,0 8px 0 #141a15,0 20px 35px #00000035}
+.device-label{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 5px 15px;color:#e2e7db;font-family:var(--sans);font-size:11px;font-weight:750;letter-spacing:1.6px}
+.device-label>span:last-child{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:1px}
+.device-label i{width:6px;height:6px;border-radius:50%;background:#e8ad40;box-shadow:0 0 5px #e8ad4050}
+.lcd-display{border:5px solid #1b251b;border-top-width:8px;border-radius:8px;background:#bdc99d;box-shadow:0 1px 0 #7c8674,inset 0 2px 8px #25332240;overflow:hidden}
+.stats{border:0;border-radius:0;background:#bdc99d;box-shadow:none;margin:0;padding:17px 0 12px}
+.stats strong{font-family:var(--lcd-font);font-weight:700;font-size:34px;letter-spacing:1px}
+.stats>div:last-child strong{font-family:var(--lcd-font);font-size:25px;letter-spacing:-.8px}
+.stats>div:last-child small{font-family:var(--sans);font-size:14px}
+.stat-label{font-weight:750;letter-spacing:.3px}
+.scorecard-link{font-size:12px;margin-top:7px}
+.tray{border:0;border-radius:0;box-shadow:none;background:#bdc99d}
+.tray-top{height:36px;margin:0 14px;border-top:1px solid #8c9b76;border-bottom:1px solid #8c9b76;font-size:9px;letter-spacing:.7px}
+.tray-top>span:last-child{font-size:8px;letter-spacing:.5px}
+.tray-content{padding:17px 14px 14px}
+.needed-heading h2{font-family:var(--lcd-font);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.needed-list{font-size:14px;line-height:1.45}
+.needed-section+.dice{margin-top:25px}
+.dice{gap:10px;min-height:0}
+.dice .die-wrap:nth-child(n) .die{transform:none}
+.die,.die.unrolled{background:#cbd6b0;border:2px solid #35462e;border-radius:3px;box-shadow:none}
+.die:not(:disabled):hover{box-shadow:0 0 0 2px #35462e35}
+.pip{border-radius:1px}
+.unrolled-mark{font-family:var(--lcd-font);font-weight:700;color:#35462e}
+.die[aria-pressed=true]{background:#e1e9ca;outline:2px solid #35462e;outline-offset:3px}
+.held-tag{font-family:var(--lcd-font);font-size:12px;font-weight:700;margin-top:13px;color:#253322}
+.hold-hint{font-size:14px;margin:9px 0 14px;line-height:1.4}
+.roll-status{max-width:100%;min-height:76px;margin:0;border:2px solid #526442;border-radius:2px;background:#bdc99d;box-shadow:none;padding:10px 12px}
+.roll-status strong{font-family:var(--lcd-font);font-size:19px;font-weight:700;letter-spacing:-.3px}
+.roll-status p{font-size:12px;margin-top:6px}
+.roll-progress{gap:5px}.roll-progress i{width:29px;height:29px;border-radius:2px;font-family:var(--lcd-font);font-size:15px;font-weight:700}
+.roll-progress i.current{background:#34432d;border-color:#34432d;color:#eef2e3;box-shadow:none}
+.roll-progress i.used{border-color:#748360;background:#aab98d;color:#253322}
+.turn-actions{max-width:none;gap:14px;padding:20px 2px 6px;margin:0;width:100%}
+.turn-actions .roll-button,.choose-score-button{min-height:59px;border-radius:9px;padding:13px 9px;font-size:17px;font-weight:750;letter-spacing:.1px;border-width:2px;transition:transform .12s,box-shadow .12s}
+.turn-actions .roll-button{background:#e8ad40;border-color:#ffd482 #c18a2c #a17020 #e8ad40;box-shadow:0 5px 0 #8c641e,0 7px 0 #202720}
+.turn-actions .roll-button:hover{background:#f3bd58;transform:translateY(-1px)}
+.turn-actions .roll-button:active{transform:translateY(4px);box-shadow:0 1px 0 #8c641e,0 3px 0 #202720}
+.choose-score-button{background:#c9cfc2;color:#252e22;border-color:#edf0e8 #9ca791 #7a8671 #c9cfc2;box-shadow:0 5px 0 #738169,0 7px 0 #202720}
+.choose-score-button:hover:not(:disabled){background:#e0e5d9}
+.choose-score-button:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #738169,0 3px 0 #202720}
+.choose-score-button:disabled{opacity:.55;background:#a8b29f;color:#263020}
+.new-game-control{border-radius:6px;border-width:2px;box-shadow:0 3px 0 #131a13;font-size:15px;min-height:46px;padding:10px 15px}
+.device-bottom{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:17px 5px 0;color:#c5cdbd;font-family:var(--sans);font-size:9px;font-weight:650;letter-spacing:1px}
+.speaker-grille{height:13px;width:70px;background:repeating-linear-gradient(90deg,#192119 0,#192119 4px,transparent 4px,transparent 9px);border-bottom:1px solid #75816a;transform:skewX(-12deg)}
+.handheld .tip{display:none}.save-note{font-size:10px;margin:16px 0 0;color:#d0d8c8;line-height:1.5}
+.announcement{font-size:12px;margin-top:12px;color:#d0d8c8}
+.footer-brand{font-family:var(--sans);font-size:13px}
+.score-dialog{border:2px solid #56674a;border-radius:8px;box-shadow:0 0 0 5px #303931,0 25px 80px #00000070}
+.score-dialog .scorecard-heading h2{font-family:var(--lcd-font);font-size:26px;font-weight:700;letter-spacing:-.8px}
+.score-mini-die{border:2px solid #35462e;border-radius:3px;background:#cbd6b0;box-shadow:none}
+.score-dialog .score-row{border-radius:2px}
+.score-filters button,.score-close,.score-dialog .score-action button{border-radius:3px}
+.score-dice-heading,.score-die-number{font-family:var(--lcd-font);font-weight:700}
+.score-celebration{border-radius:0;background:#e8ad40}
+.score-celebration .inline-award-points{font-family:var(--lcd-font);font-size:40px}
+.inline-award-label{font-family:var(--lcd-font);font-size:18px;letter-spacing:-.5px}
+.rolling .die-wrap:not(.is-held) .die{animation:lcd-shuffle .8s both;animation-delay:var(--roll-delay)}
+@keyframes lcd-shuffle{0%,100%{transform:rotate(0)}25%{transform:rotate(8deg)}50%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
+@media(max-width:740px){.site-header{height:67px;margin:0 14px}.brand{font-size:22px;letter-spacing:.6px;gap:8px}.brand-icon{width:29px;height:29px;font-size:26px}nav{gap:16px}main{padding:0 12px}.intro{padding:18px 2px 14px;gap:10px}.intro h1{font-size:23px;letter-spacing:.3px;max-width:230px;margin:0}.intro .new-game-control{padding:10px 12px;font-size:14px}.handheld{padding:12px;border-radius:19px 19px 29px 29px}.stats{padding:14px 0 12px}.stats>div{padding-left:12px;padding-right:12px}.stats strong{font-size:31px}.stat-label{font-size:9px;letter-spacing:.1px}.tray-content{padding:16px 10px 12px}.tray-top{margin:0 10px}.dice{gap:8px}.turn-actions{gap:12px;padding-top:18px}.device-label{padding-bottom:12px;font-size:10px}.device-label>span:last-child{font-size:8px}.save-note{font-size:9px}.score-dialog .scorecard-heading h2{font-size:25px}.score-celebration .inline-award-points{font-size:38px}}
+@media(max-width:380px){main{padding:0 8px}.site-header{margin:0 12px}.brand{font-size:20px;gap:7px}nav{gap:14px}.intro h1{font-size:21px}.handheld{padding:10px}.lcd-display{border-width:4px;border-top-width:6px}.tray-content{padding-left:8px;padding-right:8px}.tray-top{margin-left:8px;margin-right:8px;font-size:8px}.tray-top>span:last-child{font-size:7px}.stats>div{padding-left:9px;padding-right:9px}.stats>div:last-child{padding-left:6px;padding-right:6px}.stats strong{font-size:29px}.stats>div:last-child strong{font-size:24px}.stat-label{font-size:8px}.scorecard-link{font-size:11px}.dice{gap:7px}.roll-status{padding:9px 8px}.roll-status strong{font-size:17px}.roll-progress i{width:25px;height:25px}.hold-hint{font-size:13px}.turn-actions .roll-button #roll-label,.choose-score-button{font-size:16px}.turn-actions{gap:10px}.device-label{letter-spacing:1px}.inline-award-label{font-size:17px}.score-celebration .inline-award-points{font-size:37px}}

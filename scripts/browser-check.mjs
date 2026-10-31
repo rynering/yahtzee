@@ -46,7 +46,21 @@ try{
       assert.ok(await page.locator('#needed-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'reminder must wrap without horizontal overflow');
       assert.ok(await page.locator('#needed-list').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=14),'reminder text must remain readable');
       await checkContrast(page,[['.brand','body'],['.needed-list','.tray'],['.hold-hint','.tray'],['#roll','#roll'],['#choose-score','#choose-score'],['#new-game','#new-game'],['#current-score','.stats'],['.stat-label','.stats'],['.save-note','body']]);
+      const handheld=await page.evaluate(()=>{
+        const screen=document.querySelector('.lcd-display').getBoundingClientRect();
+        const score=document.querySelector('.stats').getBoundingClientRect();
+        const dice=document.querySelector('#dice').getBoundingClientRect();
+        const controls=document.querySelector('.turn-actions').getBoundingClientRect();
+        const die=document.querySelector('.die').getBoundingClientRect();
+        return {screenBottom:screen.bottom,scoreTop:score.top,screenTop:screen.top,diceBottom:dice.bottom,controlsTop:controls.top,die:die.width,overflow:document.documentElement.scrollWidth>innerWidth};
+      });
+      assert.ok(handheld.scoreTop>=handheld.screenTop&&handheld.diceBottom<=handheld.screenBottom&&handheld.controlsTop>=handheld.screenBottom,'scores and dice belong inside the LCD, with physical controls below');
+      assert.ok(handheld.die>=42&&!handheld.overflow,'handheld housing must preserve readable dice and fit the screen');
       await page.screenshot({path:`artifacts/screenshots/roll-reminder-${viewport.width}.png`});
+      await page.locator('[data-die="0"]').click();
+      assert.equal(await page.locator('[data-die="0"]').getAttribute('aria-pressed'),'true');
+      await page.screenshot({path:`artifacts/screenshots/handheld-held-${viewport.width}.png`});
+      await page.locator('[data-die="0"]').click();
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.waitForSelector('#score-dialog[open]');
       assert.deepEqual(await page.locator('.score-die-number').allTextContents(),['2','3','4','5','6']);
@@ -214,6 +228,7 @@ try{
   await offline.setOffline(true);await page.reload();
   assert.equal(await page.locator('#roll-status-label').innerText(),'Ready to roll');
   await page.screenshot({path:'artifacts/screenshots/game-ready.png'});
+  assert.ok(await page.locator('#roll').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight),'the ready screen must keep Roll visible on a standard phone');
   await page.getByRole('button',{name:'Roll dice',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('#choose-score').disabled);
   await page.getByRole('button',{name:'Choose score',exact:true}).click();

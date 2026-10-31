@@ -14,7 +14,7 @@ function dieMarkup(value){return Array.from({length:9},(_,i)=>`<span class="pip 
 function renderDice(){
   const focus=document.activeElement?.dataset?.die,unrolled=game.rolls===0&&!rolling&&!completed()&&!inlineCelebration;
   const shownDice=inlineCelebration?.dice||game.dice;
-  $('dice').innerHTML=shownDice.map((value,i)=>`<div class="die-wrap ${game.held[i]?'is-held':''}" style="--roll-delay:${i*35}ms;--rest-angle:${[-7,4,0,-4,7][i]}deg"><button class="die ${unrolled?'unrolled':''}" data-die="${i}" aria-label="${unrolled?`Die ${i+1}: not rolled yet`:`Die ${i+1}: ${value}. ${game.held[i]?'Held. Tap to release.':'Tap to hold.'}`}" aria-pressed="${game.held[i]}" ${!game.rolls||rolling||scoring||completed()?'disabled':''}>${unrolled?'<span class="unrolled-mark" aria-hidden="true">?</span>':dieMarkup(value)}</button><span class="held-tag">${game.held[i]?'HELD':''}</span></div>`).join('');
+  $('dice').innerHTML=shownDice.map((value,i)=>`<div class="die-wrap ${game.held[i]?'is-held':''}" style="--roll-delay:${i*35}ms;--rest-angle:0deg"><button class="die ${unrolled?'unrolled':''}" data-die="${i}" aria-label="${unrolled?`Die ${i+1}: not rolled yet`:`Die ${i+1}: ${value}. ${game.held[i]?'Held. Tap to release.':'Tap to hold.'}`}" aria-pressed="${game.held[i]}" ${!game.rolls||rolling||scoring||completed()?'disabled':''}>${unrolled?'<span class="unrolled-mark" aria-hidden="true">?</span>':dieMarkup(value)}</button><span class="held-tag">${game.held[i]?'HELD':''}</span></div>`).join('');
   if(focus!==undefined)$('dice').querySelector(`[data-die="${focus}"]`)?.focus({preventScroll:true});
 }
 function renderRows(){
