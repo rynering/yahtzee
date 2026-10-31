@@ -224,8 +224,10 @@ async function checkContrast(page,pairs){
     };
     return pairs.map(([text,surface])=>{
       const foreground=getComputedStyle(document.querySelector(text)).color;
-      // The navy tray is a gradient; use its lightest stop for a conservative check.
-      const background=surface==='.tray'?'rgb(48,78,115)':getComputedStyle(document.querySelector(surface)).backgroundColor;
+      // Check against the lightest actual gradient stop behind the light tray text.
+      const style=getComputedStyle(document.querySelector(surface));
+      const stops=style.backgroundImage.match(/rgba?\([^)]+\)/g);
+      const background=stops?stops.reduce((a,b)=>luminance(a)>luminance(b)?a:b):style.backgroundColor;
       const a=luminance(foreground),b=luminance(background);
       return {text,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
     });
