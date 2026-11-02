@@ -45,25 +45,27 @@ try{
       assert.ok(reminder.y+reminder.height<=dice.y,'remaining categories must sit above the dice');
       assert.ok(await page.locator('#needed-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'reminder must wrap without horizontal overflow');
       assert.ok(await page.locator('#needed-list').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=14),'reminder text must remain readable');
-      await checkContrast(page,[['.brand','body'],['.needed-list','.tray'],['.hold-hint','.tray'],['#roll','#roll'],['#choose-score','#choose-score'],['#new-game','#new-game'],['#current-score','.stats'],['.stat-label','.stats'],['.save-note','body']]);
-      const handheld=await page.evaluate(()=>{
-        const screen=document.querySelector('.lcd-display').getBoundingClientRect();
+      await checkContrast(page,[['.brand','body'],['.needed-list','.tray'],['.hold-hint','.tray'],['#roll','#roll'],['#choose-score','#choose-score'],['#new-game','#new-game'],['#current-score','.stats'],['.stat-label','.stats'],['.save-note','body'],['.die .pip.visible','.die','backgroundColor']]);
+      const tabletop=await page.evaluate(()=>{
+        const screen=document.querySelector('.tabletop-frame').getBoundingClientRect();
         const score=document.querySelector('.stats').getBoundingClientRect();
         const dice=document.querySelector('#dice').getBoundingClientRect();
         const controls=document.querySelector('.turn-actions').getBoundingClientRect();
         const die=document.querySelector('.die').getBoundingClientRect();
         return {screenBottom:screen.bottom,scoreTop:score.top,screenTop:screen.top,diceBottom:dice.bottom,controlsTop:controls.top,die:die.width,overflow:document.documentElement.scrollWidth>innerWidth};
       });
-      assert.ok(handheld.scoreTop>=handheld.screenTop&&handheld.diceBottom<=handheld.screenBottom&&handheld.controlsTop>=handheld.screenBottom,'scores and dice belong inside the LCD, with physical controls below');
-      assert.ok(handheld.die>=42&&!handheld.overflow,'handheld housing must preserve readable dice and fit the screen');
+      assert.ok(tabletop.scoreTop>=tabletop.screenTop&&tabletop.diceBottom<=tabletop.screenBottom&&tabletop.controlsTop>=tabletop.screenBottom,'scores and dice must fit inside the table frame, with controls below');
+      assert.ok(tabletop.die>=42&&!tabletop.overflow,'leather surround must preserve readable dice and fit the screen');
+      await checkDiceAppearance(page,'.die');
       await page.screenshot({path:`artifacts/screenshots/roll-reminder-${viewport.width}.png`});
       await page.locator('[data-die="0"]').click();
       assert.equal(await page.locator('[data-die="0"]').getAttribute('aria-pressed'),'true');
-      await page.screenshot({path:`artifacts/screenshots/handheld-held-${viewport.width}.png`});
+      await page.screenshot({path:`artifacts/screenshots/held-dice-${viewport.width}.png`});
       await page.locator('[data-die="0"]').click();
       await page.getByRole('button',{name:'Choose score',exact:true}).click();
       await page.waitForSelector('#score-dialog[open]');
       assert.deepEqual(await page.locator('.score-die-number').allTextContents(),['2','3','4','5','6']);
+      await checkDiceAppearance(page,'.score-mini-die');
       assert.equal(await page.locator('.score-row').count(),10,'remaining filter must hide all used categories');
       assert.equal(await page.locator('.state-used').count(),0);
       const metrics=await page.evaluate(()=>({
@@ -97,7 +99,7 @@ try{
       assert.equal(await page.locator('.score-row').count(),13);
       assert.equal(await page.locator('.state-used').count(),3);
       assert.equal(await page.locator('.state-open').count(),10);
-      await checkContrast(page,[['.state-open .row-title','.state-open'],['.state-open .category-status','.state-open'],['.state-used .row-title','.state-used'],['.state-used .category-status','.state-used'],['.state-used .score-value','.state-used']]);
+      await checkContrast(page,[['.state-open .row-title','.state-open'],['.state-open .category-status','.state-open'],['.state-used .row-title','.state-used'],['.state-used .category-status','.state-used'],['.state-used .score-value','.state-used'],['.score-mini-die .pip.visible','.score-mini-die','backgroundColor']]);
       await page.screenshot({path:`artifacts/screenshots/scorecard-${viewport.width}.png`});
       await page.locator('[data-category="full"]').click();
       assert.match(await page.locator('#confirm-score').innerText(),/Take a zero/);
@@ -244,8 +246,8 @@ async function checkContrast(page,pairs){
       const rgb=color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
       return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
     };
-    return pairs.map(([text,surface])=>{
-      const foreground=getComputedStyle(document.querySelector(text)).color;
+    return pairs.map(([text,surface,property='color'])=>{
+      const foreground=getComputedStyle(document.querySelector(text))[property];
       // Use the lowest contrast across all background stops for either text polarity.
       const style=getComputedStyle(document.querySelector(surface));
       const stops=style.backgroundImage.match(/rgba?\([^)]+\)/g);
@@ -260,3 +262,14 @@ async function checkContrast(page,pairs){
   for(const {text,ratio} of readings)assert.ok(ratio>=4.5,`${text} must retain readable contrast (got ${ratio.toFixed(2)}:1)`);
 }
 
+
+async function checkDiceAppearance(page,selector){
+  const appearance=await page.locator(selector).first().evaluate(e=>{
+    const color=getComputedStyle(e).backgroundColor.match(/[\d.]+/g).slice(0,3).map(Number);
+    const pip=getComputedStyle(e.querySelector('.pip.visible'));
+    return {color,pip:pip.backgroundColor,round:pip.borderRadius};
+  });
+  assert.ok(appearance.color[0]>appearance.color[1]*2&&appearance.color[0]>appearance.color[2]*2,'dice must have red faces');
+  assert.equal(appearance.pip,'rgb(255, 255, 255)','dice must have white pips');
+  assert.equal(appearance.round,'50%','dice pips must be round');
+}

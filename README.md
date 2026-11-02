@@ -2,6 +2,8 @@
 
 A calm, accessible, single-player Yahtzee PWA. Five animated dice, classic scoring (including Joker rules), optional synthesized sound, a saved game, and the ten best completed scores. No account, database, or build step is needed. Upper bonuses and Yahtzees animate directly in the roll-status area, with no celebration popup or Continue button. The points remain visible until the next roll; starting a roll or new game safely settles the total.
 
+The visual theme draws on a classic physical set: a stitched brown leather surround, a dark forest-green velvet-style rolling pad, glossy red dice with white pips, and cream scorecards. Textures and icons are drawn locally with CSS and SVG.
+
 ## Deploy with GitHub Pages
 
 1. Create a GitHub repository, with `main` as the default branch, and upload this project's contents. Include the hidden `.github` directory. A public repository can use GitHub Pages on GitHub Free; private repository Pages availability depends on your plan. The published game will be accessible to anyone with the URL.
@@ -34,3 +36,4 @@ Edit files in `dist`, bump the cache version in `dist/sw.js`, and update the mat
 13 categories, up to three rolls per turn, a 35-point upper bonus at 63, and 100 points for each additional Yahtzee when the Yahtzee box contains 50. Five matching dice after the Yahtzee box has been filled invoke the Joker placement rule. Full house is exactly a pair plus a triple except under Joker rules.
 
 The game uses browser Web Audio, localStorage, a web app manifest, and a service worker. Visual fonts fall back to local system fonts offline. No external scripts, trackers, or paid services are required. This is an independent fan project; Yahtzee is a trademark of its respective owner.
+
