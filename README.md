@@ -4,6 +4,8 @@ A calm, accessible, single-player Yahtzee PWA. Five animated dice, classic scori
 
 The visual theme draws on a classic physical set: a stitched brown leather surround, a dark forest-green velvet-style rolling pad, glossy red dice with white pips, and cream scorecards. Textures and icons are drawn locally with CSS and SVG.
 
+Five matching dice trigger a large in-place Yahtzee callout, a gold burst, staggered dice bounces, and an optional fanfare. The scorecard carries the callout on a third-roll Yahtzee too. Confirmed Yahtzee points count up over four seconds; the callout remains until the next roll or game. Effects respect reduced motion and sound settings, and never block play.
+
 ## Deploy with GitHub Pages
 
 1. Create a GitHub repository, with `main` as the default branch, and upload this project's contents. Include the hidden `.github` directory. A public repository can use GitHub Pages on GitHub Free; private repository Pages availability depends on your plan. The published game will be accessible to anyone with the URL.

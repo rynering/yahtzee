@@ -125,6 +125,58 @@ try{
     }catch(e){await page.screenshot({path:`artifacts/screenshots/failure-${viewport.width}.png`});throw e;}
     finally{await context.close();}
   }
+  // Force a real first/third-roll Yahtzee, rather than only restoring a winning fixture.
+  for(const viewport of [{width:320,height:568},{width:390,height:844}]){
+    const context=await browser.newContext({viewport,reducedMotion:'no-preference',serviceWorkers:'block'});
+    await context.route('https://fonts.googleapis.com/**',r=>r.abort());
+    await context.addInitScript(()=>{
+      localStorage.setItem('lucky-roll-v1',JSON.stringify({sound:false,records:[]}));
+      Object.defineProperty(crypto,'getRandomValues',{value:array=>array.fill(3)});
+      window.__audioNotes=0;
+      const create=AudioContext.prototype.createOscillator;
+      AudioContext.prototype.createOscillator=function(...args){window.__audioNotes++;return create.apply(this,args);};
+    });
+    const page=await context.newPage();page.setDefaultTimeout(15000);
+    try{
+      await page.goto(origin,{waitUntil:'networkidle'});
+      await page.getByRole('button',{name:'Roll dice',exact:true}).click();
+      await page.waitForSelector('.yahtzee-title');
+      assert.equal(await page.locator('.yahtzee-title').innerText(),'YAHTZEE!');
+      assert.ok(await page.locator('.yahtzee-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=34),'a rolled Yahtzee needs a large callout');
+      assert.ok(await page.locator('.is-yahtzee .dice .die-wrap').first().evaluate(e=>e.getAnimations().length>0),'winning dice must animate');
+      assert.equal(await page.locator('#current-score').innerText(),'0','celebrating a roll must not award points before confirmation');
+      assert.equal(await page.evaluate(()=>window.__audioNotes),0,'a muted winning roll must stay silent');
+      assert.equal(await page.locator('dialog[open]').count(),0);
+      await page.waitForTimeout(1300);
+      await page.screenshot({path:`artifacts/screenshots/yahtzee-rolled-${viewport.width}.png`});
+      if(viewport.width===390){
+        await page.waitForTimeout(4200);
+        assert.ok(await page.locator('.yahtzee-title').isVisible(),'the callout must remain readable after the burst ends');
+      }
+      await page.getByRole('button',{name:'Choose score',exact:true}).click();
+      assert.equal(await page.locator('#score-dialog-title').innerText(),'YAHTZEE!');
+      assert.equal(await page.locator('.score-die-number').count(),5);
+      assert.ok(await page.locator('#score-dice').evaluate(e=>e.getBoundingClientRect().bottom<innerHeight),'the winning dice must remain visible in the scorecard');
+      await page.screenshot({path:`artifacts/screenshots/yahtzee-scorecard-${viewport.width}.png`});
+      await page.locator('#close-score').click();
+      await page.getByRole('button',{name:'Roll again',exact:true}).click();
+      await page.waitForFunction(()=>!document.querySelector('#roll').disabled);
+      await page.getByRole('button',{name:'Roll again',exact:true}).click();
+      await page.waitForSelector('#score-dialog[open]');
+      assert.equal(await page.locator('#score-roll-number').innerText(),'Roll 3 of 3');
+      assert.equal(await page.locator('#score-dialog-title').innerText(),'YAHTZEE!','automatic scorecard opening must not hide a third-roll win');
+      await page.locator('[data-category="yahtzee"]').click();
+      await page.locator('#confirm-score').click();
+      await page.waitForSelector('.yahtzee-callout');
+      assert.match(await page.locator('.yahtzee-subtitle').innerText(),/\+50 POINTS/);
+      assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('lucky-roll-v1')).game.scores.yahtzee),50);
+      await page.getByRole('button',{name:'New game',exact:true}).click();
+      await page.getByRole('button',{name:'Start new game',exact:true}).click();
+      assert.equal(await page.locator('.is-yahtzee').count(),0,'starting over must clear the win effects');
+      console.log(`PASS Yahtzee moment ${viewport.width}: immediate large callout, animated dice, muted fanfare, persistent text, third-roll scorecard, and clean restart.`);
+    }catch(e){await page.screenshot({path:`artifacts/screenshots/failure-moment-${viewport.width}.png`});throw e;}
+    finally{await context.close();}
+  }
   const awardCases=[
     {name:'yahtzee',width:390,height:844,id:'yahtzee',dice:[4,4,4,4,4],scores:{},total:50,award:50,motion:'no-preference'},
     {name:'upper',width:320,height:568,id:'sixes',dice:[6,6,6,1,2],scores:{ones:3,twos:6,threes:9,fours:12,fives:15},total:98,award:35,motion:'no-preference'},
@@ -158,6 +210,9 @@ try{
       await page.waitForSelector('#score-celebration',{state:'visible'});
       assert.equal(await page.locator('dialog[open]').count(),0,'an award must not open a modal or obscure the game');
       assert.equal(await page.locator('#bonus-dialog').count(),0);
+      const isYahtzeeAward=spec.name!=='upper';
+      assert.equal(await page.locator('.is-yahtzee').count(),isYahtzeeAward?1:0,'only Yahtzee awards get the big dice celebration');
+      if(isYahtzeeAward)assert.ok(await page.locator('.yahtzee-title').isVisible());
       assert.ok(await page.locator('#inline-award-points').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=36),'added points must be prominent');
       assert.ok(await page.locator('#score-celebration').evaluate(e=>getComputedStyle(e).color===getComputedStyle(e.querySelector('#inline-award-points')).color&&getComputedStyle(e).color===getComputedStyle(e.querySelector('#inline-award-total')).color),'award numbers must retain dark, readable text on gold');
       assert.ok(await page.locator('#roll').isEnabled(),'the player can roll while the points animate');
@@ -174,6 +229,7 @@ try{
         assert.equal(await page.locator('#inline-award-total').innerText(),String(spec.total));
         assert.equal(await page.locator('#inline-award-points').evaluate(e=>e.getAnimations().length),0);
         assert.equal(await page.locator('#current-score').evaluate(e=>e.getAnimations().length),0);
+        assert.equal(await page.locator('.anniversary-game').evaluate(e=>e.getAnimations({subtree:true}).length),0,'reduced motion must disable all Yahtzee movement');
       }else{
         await page.waitForFunction(({from,to})=>{const n=Number(document.querySelector('#inline-award-total').textContent);return n>from&&n<to;},{from:oldTotal,to:spec.total});
       }

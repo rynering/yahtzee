@@ -183,3 +183,29 @@ dialog p,dialog li{color:#63533e}.close-modal{background:#e9dec8;color:#35291f}.
 @keyframes velvet-tumble{0%{transform:rotate(var(--rest-angle))}25%{transform:rotate(100deg)}50%{transform:rotate(215deg)}75%{transform:rotate(310deg)}100%{transform:rotate(calc(360deg + var(--rest-angle)))}}
 @media(max-width:740px){.site-header{height:67px;margin:0 14px}.brand{font-size:32px;gap:8px}.brand-icon{width:29px;height:29px;font-size:26px}nav{gap:16px}main{padding:0 12px}.intro{padding:18px 2px 14px;gap:10px}.intro h1{font-size:29px;max-width:230px;margin:0}.intro .new-game-control{padding:10px 12px;font-size:14px}.anniversary-game{padding:12px;border-radius:17px}.stats{padding:14px 0 12px}.stats>div{padding-left:12px;padding-right:12px}.stats strong{font-size:31px}.stat-label{font-size:9px;letter-spacing:.1px}.tray-content{padding:16px 10px 12px}.tray-top{margin:0 10px}.dice{gap:8px}.turn-actions{gap:12px;padding-top:18px}.edition-label{padding-bottom:12px;font-size:10px}.edition-label>span:last-child{font-size:8px}.save-note{font-size:9px}.score-dialog .scorecard-heading h2{font-size:28px}.score-celebration .inline-award-points{font-size:38px}}
 @media(max-width:380px){main{padding:0 8px}.site-header{margin:0 12px}.brand{font-size:29px;gap:7px}nav{gap:14px}.intro h1{font-size:26px}.anniversary-game{padding:10px}.tabletop-frame{border-width:3px}.tray-content{padding-left:8px;padding-right:8px}.tray-top{margin-left:8px;margin-right:8px;font-size:8px}.tray-top>span:last-child{font-size:7px}.stats>div{padding-left:9px;padding-right:9px}.stats>div:last-child{padding-left:6px;padding-right:6px}.stats strong{font-size:29px}.stats>div:last-child strong{font-size:25px}.stat-label{font-size:8px}.scorecard-link{font-size:11px}.dice{gap:7px}.die{border-radius:8px}.roll-status{padding:9px 8px}.roll-status strong{font-size:17px}.roll-status-heading{gap:6px}.roll-progress i{width:25px;height:25px}.hold-hint{font-size:13px}.turn-actions .roll-button #roll-label,.choose-score-button{font-size:16px}.turn-actions{gap:10px}.edition-label{letter-spacing:1px}.inline-award-label{font-size:17px}.score-celebration .inline-award-points{font-size:37px}}
+
+/* Yahtzee takes over the dice area, with a readable callout that stays until play resumes. */
+.yahtzee-callout{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:72px;padding:3px 0;margin:8px 0 13px;position:relative;z-index:1}
+.yahtzee-callout .yahtzee-title{display:block;font-family:var(--sans);font-size:clamp(34px,9vw,48px);font-weight:800;line-height:1.05;letter-spacing:1.2px;color:#ffe3a0;text-shadow:0 3px 0 #4c3215,0 0 24px #e7c78280;animation:yahtzee-arrive 1s cubic-bezier(.2,.85,.25,1.25) both,yahtzee-word-glow 1.4s 1s ease-in-out 3}
+.yahtzee-subtitle{display:block;color:#fff2cf;font-size:12px;font-weight:700;letter-spacing:1.1px;line-height:1.4}
+.is-yahtzee .dice{position:relative;isolation:isolate}
+.is-yahtzee .dice:before,.yahtzee-roll:before{content:'';position:absolute;z-index:-1;inset:-70px -22px;pointer-events:none;background:repeating-conic-gradient(from 0deg,#edca7866 0deg 5deg,transparent 5deg 23deg);mask-image:radial-gradient(ellipse,#0008 0,transparent 68%);animation:yahtzee-rays 6s ease-out 1 both}
+.is-yahtzee .dice:after{content:'';position:absolute;z-index:-1;inset:-15px 7%;border:3px solid #f2d28c;border-radius:50%;pointer-events:none;animation:yahtzee-ring 1.6s ease-out 3 both}
+.is-yahtzee .dice .die-wrap{animation:yahtzee-dice-hop 1.15s ease-in-out 3;animation-delay:var(--roll-delay)}
+.is-yahtzee .dice .die{outline:2px solid #ffe3a0;outline-offset:3px;box-shadow:inset 0 1px 0 #f68b8280,0 4px 0 #74121a,0 0 22px #f2cf7b80}
+.is-yahtzee .tabletop-frame{border-color:#c5a365;animation:yahtzee-frame-glow 1.4s ease-in-out 4}
+.scorecard-heading.has-yahtzee{background:#17432f;border-bottom-color:#d1b477}
+.scorecard-heading.has-yahtzee h2{font-family:var(--sans);font-size:29px;font-weight:800;letter-spacing:1px;color:#ffe3a0;animation:yahtzee-arrive .8s ease-out both}
+.scorecard-heading.has-yahtzee #score-dialog-hint{color:#fff2cf;font-size:12px}
+.yahtzee-roll{position:relative;isolation:isolate;overflow:hidden}
+.yahtzee-roll .score-die-item{animation:yahtzee-mini-hop 1s ease-in-out 3}
+.yahtzee-roll .score-die-item:nth-child(2){animation-delay:.08s}.yahtzee-roll .score-die-item:nth-child(3){animation-delay:.16s}.yahtzee-roll .score-die-item:nth-child(4){animation-delay:.24s}.yahtzee-roll .score-die-item:nth-child(5){animation-delay:.32s}
+.yahtzee-roll .score-mini-die{outline:2px solid #ffe3a0;outline-offset:2px;box-shadow:0 3px 0 #74121a,0 0 16px #f2cf7b65}
+@keyframes yahtzee-arrive{0%{transform:translateY(15px) scale(.45) rotate(-8deg);opacity:0}45%{transform:translateY(-5px) scale(1.12) rotate(3deg);opacity:1}70%{transform:translateY(2px) scale(.97) rotate(-1deg)}100%{transform:translateY(0) scale(1) rotate(0);opacity:1}}
+@keyframes yahtzee-word-glow{0%,100%{text-shadow:0 3px 0 #4c3215,0 0 16px #e7c78260}50%{text-shadow:0 3px 0 #4c3215,0 0 28px #f5dc9cbb}}
+@keyframes yahtzee-dice-hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-12px) rotate(-3deg)}55%{transform:translateY(1px) rotate(2deg)}75%{transform:translateY(-4px)}}
+@keyframes yahtzee-mini-hop{0%,100%{transform:translateY(0)}35%{transform:translateY(-4px)}65%{transform:translateY(1px)}}
+@keyframes yahtzee-rays{0%{transform:rotate(-20deg) scale(.7);opacity:0}15%{opacity:1}75%{opacity:.85}100%{transform:rotate(65deg) scale(1.3);opacity:0}}
+@keyframes yahtzee-ring{0%{transform:scale(.6);opacity:0}20%{opacity:.85}100%{transform:scale(1.55);opacity:0}}
+@keyframes yahtzee-frame-glow{0%,100%{box-shadow:0 0 0 1px #d5b57550}50%{box-shadow:0 0 0 1px #f5d790,0 0 22px #e3bc6b80}}
+@media(max-width:380px){.yahtzee-callout .yahtzee-title{font-size:34px;letter-spacing:.6px}.yahtzee-subtitle{font-size:11px;letter-spacing:.6px}.scorecard-heading.has-yahtzee h2{font-size:25px;letter-spacing:.5px}}

@@ -6,7 +6,8 @@ function validGame(g){return g&&Array.isArray(g.dice)&&g.dice.length===5&&g.dice
 let resumableGame=validGame(saved.game)&&(saved.game.rolls>0||categories.some(c=>saved.game.scores[c.id]!==null))?saved.game:null;
 let game=freshGame(),sound=saved.sound!==false,records=Array.isArray(saved.records)?saved.records.filter(r=>Number.isInteger(r.score)&&r.score>=0&&typeof r.date==='string').slice(0,10):[];
 let scoreFilter='remaining';
-let selected=null,rolling=false,scoring=false,audioContext,installPrompt=null,finishInlineCelebration=null,inlineCelebration=null;
+let selected=null,rolling=false,scoring=false,audioContext,installPrompt=null,finishInlineCelebration=null,inlineCelebration=null,yahtzeeMoment=null;
+const yahtzeeVoices=new Set();
 const completed=()=>categories.every(c=>game.scores[c.id]!==null);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({game:resumableGame||game,sound,records}));}catch{storageOK=false;$('save-note').textContent='Saving is unavailable in this browser. Keep this tab open to continue.';}}
 const pips={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
@@ -67,13 +68,13 @@ function render(){
   renderInlineCelebration();
   if(!storageOK)$('save-note').textContent='Saving is unavailable in this browser. Keep this tab open to continue.';
 }
-function tone(freq=440,duration=.08,delay=0,type='sine',gain=.045){if(!sound)return;try{audioContext??=new (window.AudioContext||window.webkitAudioContext)();audioContext.resume().catch(()=>{});const o=audioContext.createOscillator(),g=audioContext.createGain(),at=audioContext.currentTime+delay;o.type=type;o.frequency.setValueAtTime(freq,at);g.gain.setValueAtTime(gain,at);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audioContext.destination);o.start(at);o.stop(at+duration);}catch{}}
+function tone(freq=440,duration=.08,delay=0,type='sine',gain=.045){if(!sound)return;try{audioContext??=new (window.AudioContext||window.webkitAudioContext)();audioContext.resume().catch(()=>{});const o=audioContext.createOscillator(),g=audioContext.createGain(),at=audioContext.currentTime+delay;o.type=type;o.frequency.setValueAtTime(freq,at);g.gain.setValueAtTime(gain,at);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(audioContext.destination);o.start(at);o.stop(at+duration);return o;}catch{}}
 function randomDie(){const bytes=new Uint32Array(1);let n;do{crypto.getRandomValues(bytes);n=bytes[0];}while(n>=4294967292);return n%6+1;}
 async function roll(){
   if(rolling||scoring)return;
   if(completed()){reset();return;}
   if(game.rolls>=3||(game.rolls&&game.held.every(Boolean)))return;
-  finishInlineCelebration?.(true);
+  clearYahtzeeMoment();finishInlineCelebration?.(true);
   resumableGame=null;
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const result=game.dice.map((d,i)=>game.held[i]?d:randomDie());
@@ -90,8 +91,8 @@ async function roll(){
   if(frames!==null)clearInterval(frames);
   game.dice=result;game.rolls++;rolling=false;
   $('dice').classList.remove('rolling');persist();render();
-  $('announcement').textContent=`Roll ${game.rolls} of 3: ${game.dice.join(', ')}. ${3-game.rolls} rolls left.`;
-  if(isYahtzee(game.dice)){[523,659,784,1047].forEach((f,i)=>tone(f,.25,i*.12));celebrate();}
+  $('announcement').textContent=isYahtzee(game.dice)?'Yahtzee! Five matching dice. Choose a category to score.':`Roll ${game.rolls} of 3: ${game.dice.join(', ')}. ${3-game.rolls} rolls left.`;
+  if(isYahtzee(game.dice)){startYahtzeeMoment();yahtzeeFanfare();celebrate();}
   if(game.rolls===3)openScorecard();
 }
 function openScorecard(){
@@ -108,11 +109,11 @@ function closeScorecard(){
 function showModal(html){$('modal-content').innerHTML=html;if(!$('modal').open)$('modal').showModal();}
 function rules(){showModal(`<div class="eyebrow">THE CLASSIC RULES</div><h2>A little refresher.</h2><ol><li><strong>Roll up to three times.</strong> Tap dice to hold or release them between rolls. You can score after any roll.</li><li><strong>Choose one category.</strong> Preview the points on your scorecard, then confirm. Each category can be used once, even if you take a zero.</li><li><strong>Play all 13 rounds.</strong> Your goal is the highest total. There’s no timer, so take your time.</li></ol><h3>How the scoring works</h3><p>Ones through Sixes: add only the matching dice. Reach 63 in the upper section to earn a 35-point bonus.</p><p>Three or Four of a kind: add all five dice if you have at least three or four matching dice. Full house: exactly three of one number and two of another for 25. Small straight: four consecutive numbers for 30. Large straight: five consecutive numbers for 40. Yahtzee: five matching dice for 50. Chance: add all five dice.</p><h3>Extra Yahtzees & the Joker rule</h3><p>Once your Yahtzee box is filled, another five of a kind must go in its matching upper box if that box is empty. Otherwise, use an open lower box: full house and straights receive their fixed scores. If all lower boxes are filled, take zero in an open upper box. Each extra Yahtzee adds 100 bonus points only if your Yahtzee box contains 50.</p><h3>Keep it close</h3><p>Your game, sound setting, and ten best completed scores are saved in this browser. They don’t sync between devices. Clearing this site’s data removes them.</p><button class="secondary-button" id="install-help">Add to your home screen ↗</button><div class="dialog-actions"><button class="primary-button" data-close>Let’s roll</button></div>`);}
 function history(){showModal(`<div class="eyebrow">A LITTLE FRIENDLY COMPETITION</div><h2>Your personal bests.</h2>${records.length?`<ol class="record-list">${records.map((r,i)=>`<li><span>${i===0?'♜':'#'+(i+1)} &nbsp; ${new Date(r.date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><strong>${r.score}</strong></li>`).join('')}</ol>`:'<p>A clean slate, full of possibility. Finish your first game to put a score on the board.</p>'}<p>Saved on this device · Completed games only</p><div class="dialog-actions"><button class="primary-button" data-close>Back to the game</button></div>`);}
-function reset(){finishInlineCelebration?.(true);closeScorecard();resumableGame=null;game=freshGame();selected=null;persist();render();$('announcement').textContent='A new game is ready. Click Roll to take your first roll.';$('modal').close();}
+function reset(){clearYahtzeeMoment();finishInlineCelebration?.(true);closeScorecard();resumableGame=null;game=freshGame();selected=null;persist();render();$('announcement').textContent='A new game is ready. Click Roll to take your first roll.';$('modal').close();}
 function requestReset(){if(rolling||scoring)return;if(!game.rolls&&!categories.some(c=>game.scores[c.id]!==null)){reset();return;}if(completed()){reset();return;}showModal('<div class="eyebrow">A FRESH START</div><h2>Start a new game?</h2><p>Your current game will be cleared. Your personal bests will stay safe.</p><div class="dialog-actions"><button class="secondary-button" data-close>Keep playing</button><button class="primary-button" id="reset-confirm">Start new game</button></div>');}
 function confirmScore(){
   if(!selected||rolling||scoring)return;
-  finishInlineCelebration?.(true);scoring=true;
+  clearYahtzeeMoment();finishInlineCelebration?.(true);scoring=true;
   const id=selected,name=categories.find(c=>c.id===id).name,result=commit(game,id);
   const award=celebrationFor(game,result,id);
   const previousBest=records.length?Math.max(...records.map(r=>r.score)):-1;
@@ -138,6 +139,7 @@ function renderInlineCelebration(){
   banner.hidden=!inlineCelebration;
   document.querySelector('.roll-status').classList.toggle('has-award',!!inlineCelebration);
   document.querySelector('.stats').classList.toggle('score-counting',!!inlineCelebration&&!inlineCelebration.done);
+  renderYahtzeeMoment();
   if(!inlineCelebration)return;
   $('inline-award-label').textContent=inlineCelebration.label;
   $('inline-award-points').textContent=`+${inlineCelebration.points}`;
@@ -163,13 +165,17 @@ function playInlineCelebration(plan){
     stopped=true;if(frame!==null)cancelAnimationFrame(frame);timers.forEach(clearTimeout);
     $('inline-award-points').getAnimations().forEach(a=>a.cancel());
     total(totals(game).total);state.done=true;state.label=label;state.points=plan.award;
-    if(clear&&inlineCelebration===state)inlineCelebration=null;
+    if(clear&&inlineCelebration===state){inlineCelebration=null;clearYahtzeeMoment();}
     if(finishInlineCelebration===finish)finishInlineCelebration=null;
     // A completed banner stays readable until the next roll or new game.
     if(!clear)finishInlineCelebration=finish;
     renderInlineCelebration();
   };
-  finishInlineCelebration=finish;render();
+  finishInlineCelebration=finish;
+  const yahtzeePoints=plan.steps.filter(s=>s.kind==='yahtzee').reduce((sum,s)=>sum+s.points,0);
+  if(yahtzeePoints){startYahtzeeMoment(yahtzeePoints);yahtzeeFanfare();}
+  render();
+  if(yahtzeePoints)$('score-celebration').scrollIntoView({block:'nearest',behavior:'instant'});
   const complete=()=>{
     total(plan.to);state.done=true;state.label=label;state.points=plan.award;renderInlineCelebration();
     [523,659,784,1047].forEach((frequency,i)=>tone(frequency,.2,i*.09,'sine',.045));
@@ -186,7 +192,7 @@ function playInlineCelebration(plan){
       points.animate([{transform:'translateY(10px) scale(.85)',opacity:.4},{transform:'translateY(0) scale(1.08)',opacity:1},{transform:'translateY(0) scale(1)',opacity:1}],{duration:700,easing:'ease-out'});
     }
     tone(step.kind==='score'?440:660,.12,0,'triangle',.035);
-    const start=performance.now(),duration=step.kind==='score'?700:2800;let lastTone=start;
+    const start=performance.now(),duration=step.kind==='score'?700:step.kind==='yahtzee'?4000:2800;let lastTone=start;
     const tick=now=>{
       if(stopped||inlineCelebration!==state)return;
       const progress=Math.min(1,(now-start)/duration),eased=progress<.5?2*progress*progress:1-Math.pow(-2*progress+2,2)/2;
@@ -200,15 +206,55 @@ function playInlineCelebration(plan){
   later(()=>stepAt(0),650);
 }
 
+// A celebration lives in the dice area; it never opens a dialog or awards points.
+function stopYahtzeeFanfare(){
+  for(const voice of yahtzeeVoices){try{voice.stop();}catch{}}
+  yahtzeeVoices.clear();
+}
+function clearYahtzeeMoment(){
+  yahtzeeMoment=null;stopYahtzeeFanfare();
+  document.querySelector('.anniversary-game').classList.remove('is-yahtzee');
+  document.querySelector('.scorecard-heading').classList.remove('has-yahtzee');
+  document.querySelector('.score-roll-summary').classList.remove('yahtzee-roll');
+  $('hold-hint').classList.remove('yahtzee-callout');
+}
+function startYahtzeeMoment(points=0){
+  clearYahtzeeMoment();
+  // Restart the finite burst for a newly rolled or confirmed Yahtzee.
+  void document.querySelector('.anniversary-game').offsetWidth;
+  yahtzeeMoment={points};renderYahtzeeMoment();
+  if(!inlineCelebration)$('hold-hint').scrollIntoView({block:'nearest',behavior:'instant'});
+}
+function renderYahtzeeMoment(){
+  const active=!!yahtzeeMoment,hint=$('hold-hint');
+  document.querySelector('.anniversary-game').classList.toggle('is-yahtzee',active);
+  hint.classList.toggle('yahtzee-callout',active);
+  const scoringRoll=active&&!inlineCelebration&&game.rolls>0;
+  document.querySelector('.scorecard-heading').classList.toggle('has-yahtzee',scoringRoll);
+  document.querySelector('.score-roll-summary').classList.toggle('yahtzee-roll',scoringRoll);
+  if(!active)return;
+  const caption=yahtzeeMoment.points?`FIVE OF A KIND · +${yahtzeeMoment.points} POINTS`:'FIVE OF A KIND';
+  if(hint.querySelector('.yahtzee-subtitle')?.textContent!==caption){
+    hint.innerHTML=`<strong class="yahtzee-title">YAHTZEE!</strong><span class="yahtzee-subtitle">${caption}</span>`;
+  }
+  if(scoringRoll){$('score-dialog-title').textContent='YAHTZEE!';$('score-dialog-hint').textContent='Five matching dice! Choose your score.';}
+}
+function yahtzeeFanfare(){
+  [523,659,784,1047,784,1047,1319,1568].forEach((frequency,i)=>{
+    const voice=tone(frequency,i===7?.55:.22,i*.16,'triangle',.045);
+    if(voice){yahtzeeVoices.add(voice);voice.onended=()=>yahtzeeVoices.delete(voice);}
+  });
+}
+
 function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const layer=document.createElement('div');layer.className='celebrate';layer.setAttribute('aria-hidden','true');for(let i=0;i<45;i++){const piece=document.createElement('i');piece.className='confetti';piece.style.cssText=`left:${Math.random()*100}%;background:${['#bd9655','#b52630','#f5ecda','#245741'][i%4]};animation-delay:${Math.random()*.7}s;animation-duration:${1.7+Math.random()}s;`;layer.append(piece);}document.body.append(layer);setTimeout(()=>layer.remove(),3600);}
 function installHelp(){showModal(`<div class="eyebrow">YOUR FAVORITE GAME. ONE TAP AWAY.</div><h2>Make yourself at home.</h2><p>Open this game’s link on the phone or tablet where you want to play.</p><h3>iPhone or iPad</h3><p>Open in <strong>Safari</strong>, tap <strong>Share</strong> (the square with an arrow), choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>. You may need to tap “More” to find it.</p><h3>Android</h3><p>Open in <strong>Chrome</strong>, tap the <strong>⋮ menu</strong>, then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p><h3>On a computer</h3><p>Chrome and Edge offer an install button in the address bar when installation is available.</p><p>After the first complete online visit, the game works offline. Play in the installed app to keep all its scores together.</p>${installPrompt?'<button class="primary-button" id="install-now">Install Lucky Roll</button>':''}<div class="dialog-actions"><button class="secondary-button" data-close>Got it</button></div>`);}
-$('roll').addEventListener('click',roll);$('new-game').addEventListener('click',requestReset);$('rules').addEventListener('click',rules);$('history').addEventListener('click',history);$('sound').addEventListener('click',()=>{finishInlineCelebration?.(false);sound=!sound;persist();render();tone(660,.08);});
+$('roll').addEventListener('click',roll);$('new-game').addEventListener('click',requestReset);$('rules').addEventListener('click',rules);$('history').addEventListener('click',history);$('sound').addEventListener('click',()=>{finishInlineCelebration?.(false);sound=!sound;if(!sound)stopYahtzeeFanfare();persist();render();tone(660,.08);});
 $('choose-score').addEventListener('click',openScorecard);
 $('score-filters').addEventListener('click',e=>{const button=e.target.closest('[data-score-filter]');if(!button)return;scoreFilter=button.dataset.scoreFilter;selected=null;render();$('score-scroll').scrollTop=0;});
 $('view-scorecard').addEventListener('click',openScorecard);
 $('close-score').addEventListener('click',closeScorecard);
 $('score-dialog').addEventListener('close',()=>document.body.classList.remove('score-open'));
-$('resume-game').addEventListener('click',()=>{if(!resumableGame||rolling)return;finishInlineCelebration?.(true);game=resumableGame;resumableGame=null;selected=null;persist();render();$('announcement').textContent=`Saved game resumed. ${completed()?'Game complete.':game.rolls?`Roll ${game.rolls} of 3, with ${3-game.rolls} rolls left.`:'Ready for the first roll of this turn.'}`;});
+$('resume-game').addEventListener('click',()=>{if(!resumableGame||rolling)return;clearYahtzeeMoment();finishInlineCelebration?.(true);game=resumableGame;resumableGame=null;selected=null;persist();render();$('announcement').textContent=`Saved game resumed. ${completed()?'Game complete.':game.rolls?`Roll ${game.rolls} of 3, with ${3-game.rolls} rolls left.`:'Ready for the first roll of this turn.'}`;});
 $('dice').addEventListener('click',e=>{const b=e.target.closest('[data-die]');if(!b||rolling||!game.rolls||completed()||b.disabled)return;const i=Number(b.dataset.die);game.held[i]=!game.held[i];tone(game.held[i]?520:360,.05);persist();render();});
 document.querySelector('.scorecard').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(b&&!b.disabled){selected=selected===b.dataset.category?null:b.dataset.category;render();if(selected)$('confirm-score').focus({preventScroll:true});}if(e.target.closest('#confirm-score'))confirmScore();if(e.target.closest('#back-to-dice'))closeScorecard();});
 $('modal').addEventListener('click',async e=>{if(e.target.closest('[data-close],.close-modal'))$('modal').close();if(e.target.id==='reset-confirm')reset();if(e.target.id==='view-final-score'){$('modal').close();openScorecard();}if(e.target.id==='install-help')installHelp();if(e.target.id==='install-now'&&installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('modal').close();}});
