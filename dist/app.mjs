@@ -8,6 +8,8 @@ let game=freshGame(),sound=saved.sound!==false,records=Array.isArray(saved.recor
 let scoreFilter='remaining';
 let selected=null,rolling=false,scoring=false,audioContext,installPrompt=null,finishInlineCelebration=null,inlineCelebration=null,yahtzeeMoment=null;
 const yahtzeeVoices=new Set();
+let pendingScorecard=null;
+function cancelPendingScorecard(){clearTimeout(pendingScorecard);pendingScorecard=null;}
 const completed=()=>categories.every(c=>game.scores[c.id]!==null);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({game:resumableGame||game,sound,records}));}catch{storageOK=false;$('save-note').textContent='Saving is unavailable in this browser. Keep this tab open to continue.';}}
 const pips={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
@@ -93,10 +95,19 @@ async function roll(){
   $('dice').classList.remove('rolling');persist();render();
   $('announcement').textContent=isYahtzee(game.dice)?'Yahtzee! Five matching dice. Choose a category to score.':`Roll ${game.rolls} of 3: ${game.dice.join(', ')}. ${3-game.rolls} rolls left.`;
   if(isYahtzee(game.dice)){startYahtzeeMoment();yahtzeeFanfare();celebrate();}
-  if(game.rolls===3)openScorecard();
+  if(game.rolls===3){
+    if(isYahtzee(game.dice)){
+      const winningGame=game,moment=yahtzeeMoment;
+      pendingScorecard=setTimeout(()=>{
+        pendingScorecard=null;
+        if(game===winningGame&&yahtzeeMoment===moment&&game.rolls===3&&!document.hidden&&!$('modal').open)openScorecard();
+      },6000);
+    }else openScorecard();
+  }
 }
 function openScorecard(){
   if(rolling||scoring)return;
+  cancelPendingScorecard();
   finishInlineCelebration?.(false);
   selected=null;scoreFilter=completed()?'used':'remaining';render();
   if(!$('score-dialog').open)$('score-dialog').showModal();
@@ -106,7 +117,7 @@ function closeScorecard(){
   if($('score-dialog').open)$('score-dialog').close();
   document.body.classList.remove('score-open');
 }
-function showModal(html){$('modal-content').innerHTML=html;if(!$('modal').open)$('modal').showModal();}
+function showModal(html){cancelPendingScorecard();$('modal-content').innerHTML=html;if(!$('modal').open)$('modal').showModal();}
 function rules(){showModal(`<div class="eyebrow">THE CLASSIC RULES</div><h2>A little refresher.</h2><ol><li><strong>Roll up to three times.</strong> Tap dice to hold or release them between rolls. You can score after any roll.</li><li><strong>Choose one category.</strong> Preview the points on your scorecard, then confirm. Each category can be used once, even if you take a zero.</li><li><strong>Play all 13 rounds.</strong> Your goal is the highest total. There’s no timer, so take your time.</li></ol><h3>How the scoring works</h3><p>Ones through Sixes: add only the matching dice. Reach 63 in the upper section to earn a 35-point bonus.</p><p>Three or Four of a kind: add all five dice if you have at least three or four matching dice. Full house: exactly three of one number and two of another for 25. Small straight: four consecutive numbers for 30. Large straight: five consecutive numbers for 40. Yahtzee: five matching dice for 50. Chance: add all five dice.</p><h3>Extra Yahtzees & the Joker rule</h3><p>Once your Yahtzee box is filled, another five of a kind must go in its matching upper box if that box is empty. Otherwise, use an open lower box: full house and straights receive their fixed scores. If all lower boxes are filled, take zero in an open upper box. Each extra Yahtzee adds 100 bonus points only if your Yahtzee box contains 50.</p><h3>Keep it close</h3><p>Your game, sound setting, and ten best completed scores are saved in this browser. They don’t sync between devices. Clearing this site’s data removes them.</p><button class="secondary-button" id="install-help">Add to your home screen ↗</button><div class="dialog-actions"><button class="primary-button" data-close>Let’s roll</button></div>`);}
 function history(){showModal(`<div class="eyebrow">A LITTLE FRIENDLY COMPETITION</div><h2>Your personal bests.</h2>${records.length?`<ol class="record-list">${records.map((r,i)=>`<li><span>${i===0?'♜':'#'+(i+1)} &nbsp; ${new Date(r.date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span><strong>${r.score}</strong></li>`).join('')}</ol>`:'<p>A clean slate, full of possibility. Finish your first game to put a score on the board.</p>'}<p>Saved on this device · Completed games only</p><div class="dialog-actions"><button class="primary-button" data-close>Back to the game</button></div>`);}
 function reset(){clearYahtzeeMoment();finishInlineCelebration?.(true);closeScorecard();resumableGame=null;game=freshGame();selected=null;persist();render();$('announcement').textContent='A new game is ready. Click Roll to take your first roll.';$('modal').close();}
@@ -212,6 +223,7 @@ function stopYahtzeeFanfare(){
   yahtzeeVoices.clear();
 }
 function clearYahtzeeMoment(){
+  cancelPendingScorecard();
   yahtzeeMoment=null;stopYahtzeeFanfare();
   document.querySelector('.anniversary-game').classList.remove('is-yahtzee');
   document.querySelector('.scorecard-heading').classList.remove('has-yahtzee');

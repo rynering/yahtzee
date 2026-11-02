@@ -4,7 +4,7 @@ A calm, accessible, single-player Yahtzee PWA. Five animated dice, classic scori
 
 The visual theme draws on a classic physical set: a stitched brown leather surround, a dark forest-green velvet-style rolling pad, glossy red dice with white pips, and cream scorecards. Textures and icons are drawn locally with CSS and SVG.
 
-Five matching dice trigger a large in-place Yahtzee callout, a gold burst, staggered dice bounces, and an optional fanfare. The scorecard carries the callout on a third-roll Yahtzee too. Confirmed Yahtzee points count up over four seconds; the callout remains until the next roll or game. Effects respect reduced motion and sound settings, and never block play.
+Five matching dice trigger a large in-place Yahtzee callout, a gold burst, staggered dice bounces, and an optional fanfare. On a third-roll Yahtzee, the dice-screen celebration stays visible for six seconds before the scorecard opens; Choose score opens it immediately. Opening a menu, choosing a score, or starting over cancels the pending automatic opening. The scorecard carries the callout too. Confirmed Yahtzee points count up over four seconds; the callout remains until the next roll or game. Effects respect reduced motion and sound settings, and never block play.
 
 ## Deploy with GitHub Pages
 

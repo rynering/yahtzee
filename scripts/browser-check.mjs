@@ -162,9 +162,26 @@ try{
       await page.getByRole('button',{name:'Roll again',exact:true}).click();
       await page.waitForFunction(()=>!document.querySelector('#roll').disabled);
       await page.getByRole('button',{name:'Roll again',exact:true}).click();
-      await page.waitForSelector('#score-dialog[open]');
+      await page.waitForFunction(()=>document.querySelector('#roll-status-label').textContent==='Roll 3 of 3'&&!document.querySelector('#choose-score').disabled);
+      const thirdRollReady=Date.now();
+      assert.equal(await page.locator('#score-dialog').isVisible(),false,'a third-roll Yahtzee must celebrate on the dice screen first');
+      await page.waitForTimeout(3000);
+      assert.equal(await page.locator('#score-dialog').isVisible(),false,'the scorecard must not interrupt the celebration');
+      assert.ok(await page.locator('.yahtzee-title').isVisible());
+      await page.screenshot({path:`artifacts/screenshots/yahtzee-third-roll-${viewport.width}.png`});
+      if(viewport.width===320){
+        await page.getByRole('button',{name:'Choose score',exact:true}).click();
+        assert.ok(Date.now()-thirdRollReady<5500,'Choose score must skip the remaining wait');
+        await page.locator('#close-score').click();
+        await page.waitForTimeout(3500);
+        assert.equal(await page.locator('#score-dialog').isVisible(),false,'a manually closed scorecard must not reopen when the old timer expires');
+        await page.getByRole('button',{name:'Choose score',exact:true}).click();
+      }else{
+        await page.waitForSelector('#score-dialog[open]');
+        assert.ok(Date.now()-thirdRollReady>=5600,'the full celebration must be visible before automatic scoring');
+      }
       assert.equal(await page.locator('#score-roll-number').innerText(),'Roll 3 of 3');
-      assert.equal(await page.locator('#score-dialog-title').innerText(),'YAHTZEE!','automatic scorecard opening must not hide a third-roll win');
+      assert.equal(await page.locator('#score-dialog-title').innerText(),'YAHTZEE!','the scorecard keeps the winning callout after the celebration');
       await page.locator('[data-category="yahtzee"]').click();
       await page.locator('#confirm-score').click();
       await page.waitForSelector('.yahtzee-callout');
@@ -173,9 +190,34 @@ try{
       await page.getByRole('button',{name:'New game',exact:true}).click();
       await page.getByRole('button',{name:'Start new game',exact:true}).click();
       assert.equal(await page.locator('.is-yahtzee').count(),0,'starting over must clear the win effects');
-      console.log(`PASS Yahtzee moment ${viewport.width}: immediate large callout, animated dice, muted fanfare, persistent text, third-roll scorecard, and clean restart.`);
+      console.log(`PASS Yahtzee moment ${viewport.width}: immediate large callout, animated dice, muted fanfare, persistent text, third-roll celebration delay, manual skip, and clean restart.`);
     }catch(e){await page.screenshot({path:`artifacts/screenshots/failure-moment-${viewport.width}.png`});throw e;}
     finally{await context.close();}
+  }
+  // Restarting during the delay must never open a scorecard in the new game.
+  {
+    const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce',serviceWorkers:'block'});
+    await context.route('https://fonts.googleapis.com/**',r=>r.abort());
+    const g=freshGame();g.rolls=2;g.dice=[4,4,4,4,4];
+    await context.addInitScript(game=>{
+      localStorage.setItem('lucky-roll-v1',JSON.stringify({game,sound:false,records:[]}));
+      Object.defineProperty(crypto,'getRandomValues',{value:array=>array.fill(3)});
+    },g);
+    const page=await context.newPage();
+    try{
+      await page.goto(origin,{waitUntil:'networkidle'});
+      await page.getByRole('button',{name:'Resume game',exact:true}).click();
+      await page.getByRole('button',{name:'Roll again',exact:true}).click();
+      await page.waitForSelector('.yahtzee-title');
+      assert.equal(await page.locator('#score-dialog').isVisible(),false);
+      await page.getByRole('button',{name:'New game',exact:true}).click();
+      await page.getByRole('button',{name:'Start new game',exact:true}).click();
+      await page.waitForTimeout(6300);
+      assert.equal(await page.locator('#score-dialog').isVisible(),false,'the old third-roll timer must not open a new-game scorecard');
+      assert.equal(await page.locator('#roll-status-label').innerText(),'Ready to roll');
+      assert.equal(await page.locator('#current-score').innerText(),'0');
+      console.log('PASS third-roll restart: pending scoring is cancelled, including with reduced motion.');
+    }finally{await context.close();}
   }
   const awardCases=[
     {name:'yahtzee',width:390,height:844,id:'yahtzee',dice:[4,4,4,4,4],scores:{},total:50,award:50,motion:'no-preference'},
